@@ -1,3 +1,35 @@
+# Formlets for TypeScript/React [Highly experimental]
+
+Formlets is a cool idea and I want to explore how formlets can look in Typescript/React.
+
+```typescript
+const person = Enhance.withLabeledBox("Person", Core
+  .map2(
+      text("First name" , "Like 'John' or 'Jane'")
+    , text("Last name"  , "Like 'Doe'")
+    , (fn, ln) => new Person(fn, ln)
+    ));
+
+const address = Enhance.withLabeledBox("Address", Core
+  .map7(
+      text("C/O"        , "Like 'Mom Doe'")
+    , text("First name" , "Like 'John' or 'Jane'")
+    , text("Last name"  , "Like 'Doe'")
+    , text("Address"    , "Like 'Wall st.'")
+    , text("City"       , "Like 'New york'")
+    , text("Zip"        , "Like 'NY12345'")
+    , text("Country"    , "Like 'USA'")
+    , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
+    ));
+
+const newUser = Core.map2(person, address, (p, a) => new NewUser(p, a, undefined));
+
+const formlet =
+    newUser
+    .mapView(intoForm)
+    ;
+```
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
