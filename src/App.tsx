@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { Core, Inputs, Enhance, FormletView, FormletViews, FormletComponent } from './formlet';
+import { Core, DelayedTextInputComponent, Inputs, Enhance, FormletView, FormletViews, FormletComponent } from './formlet';
 
 const intoForm = (v : FormletView) => FormletViews.element("form", {}, v);
 const intoFormGroup = (v : FormletView) => FormletViews.element("div", { "className" : "form-group" }, v);
@@ -93,6 +93,9 @@ class MyFormletComponent extends FormletComponent<NewUser> {
   }
 }
 
+
+
+//        <DelayedTextInputComponent placeholder="Hello" initial="There"/>
 const App: React.FC = () => {
   return (
     <div className="App">
