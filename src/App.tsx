@@ -1,5 +1,4 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import { Core, Inputs, Enhance, FormletView, FormletViews, FormletComponent } from './formlet';
 
