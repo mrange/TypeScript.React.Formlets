@@ -1,7 +1,6 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
-import { Core, Inputs, Enhance, FormletView, FormletViews, FormletComponent } from './formlet';
+import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent } from './formlet';
 
 const intoForm = (v : FormletView) => FormletViews.element("form", {}, v);
 const intoFormGroup = (v : FormletView) => FormletViews.element("div", { "className" : "form-group" }, v);
@@ -59,7 +58,13 @@ class NewUser {
 }
 
 function text(label: string, placeholder: string) {
-  return Enhance.withLabel(label, Inputs.text(placeholder, "")).mapView(intoFormGroup);
+  return Inputs
+    .text(placeholder, "")
+    .apply(Validate.notEmpty)
+    .apply(Enhance.withValidation)
+    .apply(t => Enhance.withLabel(label, t))
+    .mapView(intoFormGroup)
+    ;
 }
 
 const person = Enhance.withLabeledBox("Person", Core
@@ -94,6 +99,9 @@ class MyFormletComponent extends FormletComponent<NewUser> {
   }
 }
 
+
+
+//        <DelayedTextInputComponent placeholder="Hello" initial="There"/>
 const App: React.FC = () => {
   return (
     <div className="App">

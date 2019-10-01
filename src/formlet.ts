@@ -27,7 +27,12 @@ export class Lists {
 }
 
 export class FormletBuildContext {
-  currentId = 0;
+  readonly redraw: () => void
+  private currentId = 0;
+
+  constructor(redraw: () => void) {
+    this.redraw = redraw;
+  }
 
   createId(): string {
     ++this.currentId;
@@ -96,10 +101,14 @@ export class FormletFailures {
   static fork(l: FormletFailure, r: FormletFailure): FormletFailure {
     return new FormletFailure_Fork(l, r);
   }
+
+  static failureMessage(f: FormletFailure): string {
+    return "WRONG";
+  }
 }
 
 export abstract class FormletModel {
-  abstract asValue(initial: string): string;
+  abstract asValue(initial: string): FormletModel_Value;
   abstract asFork(): [FormletModel, FormletModel];
 
   join(r: FormletModel): FormletModel {
@@ -108,8 +117,8 @@ export abstract class FormletModel {
 }
 
 class FormletModel_Empty extends FormletModel {
-  asValue(initial: string): string {
-    return initial;
+  asValue(initial: string): FormletModel_Value {
+    return new FormletModel_Value(initial);
   }
 
   asFork(): [FormletModel, FormletModel] {
@@ -117,14 +126,14 @@ class FormletModel_Empty extends FormletModel {
   }
 }
 
-class FormletModel_Value extends FormletModel {
+export class FormletModel_Value extends FormletModel {
   constructor(value: string) {
     super();
     this.value = value;
   }
 
-  asValue(initial: string): string {
-    return this.value;
+  asValue(initial: string): FormletModel_Value {
+    return this;
   }
 
   asFork(): [FormletModel, FormletModel] {
@@ -145,8 +154,8 @@ class FormletModel_Fork extends FormletModel {
     this.right = right;
   }
 
-  asValue(initial: string): string {
-    return initial;
+  asValue(initial: string): FormletModel_Value {
+    return new FormletModel_Value(initial);
   }
 
   asFork(): [FormletModel, FormletModel] {
@@ -185,7 +194,7 @@ export abstract class FormletView {
     return FormletViews.content(content);
   }
 
-  element(element: string, attributes: object): FormletView {
+  element(element: any, attributes: object): FormletView {
     return FormletViews.element(element, attributes, this);
   }
 }
@@ -221,7 +230,8 @@ class FormletView_WithAttributes extends FormletView {
   }
 
   render(context: FormletRenderContext, container: any[], attributes: object, id?: string): void {
-    this._view.render(context, container, Object.assign({}, this._attributes, attributes), id);
+    const merged = Object.assign({}, this._attributes, attributes);
+    this._view.render(context, container, merged, id);
   }
 }
 
@@ -239,11 +249,11 @@ class FormletView_Content extends FormletView {
 }
 
 class FormletView_Element extends FormletView {
-  private readonly _element: string;
+  private readonly _element: any;
   private readonly _attributes: object;
   private readonly _view: FormletView;
 
-  constructor(element: string, attributes: object, view: FormletView) {
+  constructor(element: any, attributes: object, view: FormletView) {
     super();
     this._element = element;
     this._attributes = attributes;
@@ -316,7 +326,7 @@ export abstract class FormletViews {
     return new FormletView_Content(content);
   }
 
-  static element(element: string, attributes: object, view: FormletView): FormletView {
+  static element(element: any, attributes: object, view: FormletView): FormletView {
     return new FormletView_Element(element, attributes, view);
   }
 
@@ -360,6 +370,15 @@ export class FormletResult<T> {
     );
   }
 
+  withFailure(failure: FormletFailure): FormletResult<T> {
+    return new FormletResult<T>(
+      this.value,
+      failure,
+      this.model,
+      this.view
+    );
+  }
+
   withView(view: FormletView): FormletResult<T> {
     return new FormletResult<T>(
       this.value,
@@ -397,6 +416,10 @@ export class Formlet<T> extends BaseFormlet {
 
   andAlso<U>(u: Formlet<U>): Formlet<[T, U]> {
     return Core.andAlso(this, u);
+  }
+
+  apply<U>(f: (t: Formlet<T>) => Formlet<U>): Formlet<U> {
+    return f(this);
   }
 }
 
@@ -587,8 +610,8 @@ export class Core {
     });
   }
 
-  static build<T>(t: Formlet<T>, model: FormletModel): FormletResult<T> {
-    const ctx = new FormletBuildContext();
+  static build<T>(redraw: () => void, t: Formlet<T>, model: FormletModel): FormletResult<T> {
+    const ctx = new FormletBuildContext(redraw);
     return t.build(ctx, [], model);
   }
 
@@ -606,6 +629,24 @@ export class Core {
   }
 }
 
+export class Validate {
+  static validate<T> (validator: (v: T) => string|undefined, t: Formlet<T>): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+      const tr = t.build(c, fc, fm);
+      const v = validator(tr.value);
+      if (v) {
+        return tr.withFailure(tr.failure.join(FormletFailures.failure(fc, v)));
+      } else {
+        return tr;
+      }
+    });
+  }
+
+  static notEmpty(t : Formlet<string>): Formlet<string> {
+    return Validate.validate(v => v.length == 0 ? "Must not be empty" : undefined, t);
+  }
+}
+
 export class Enhance {
   static withLabel<T>(label: string, t: Formlet<T>): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
@@ -618,6 +659,24 @@ export class Enhance {
           ;
         const v = FormletViews.fork(lv, tr.view.withId(id))
         return tr.withView(v);
+      });
+  }
+
+  static withValidation<T>(t: Formlet<T>): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+        const tr = t.build(c, fc, fm);
+        const f = tr.failure;
+        if (f.isEmpty) {
+          return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
+        } else  {
+          const msg = FormletFailures.failureMessage(f);
+          const vl = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
+          const vr = FormletViews
+            .content(msg)
+            .element("div", { "className": "invalid-feedback"}) // TODO: Break this dependency on bootstrap
+            ;
+          return tr.withView(FormletViews.fork(vl, vr));
+        }
       });
   }
 
@@ -658,13 +717,21 @@ export class Enhance {
 export class Inputs {
   static text(placeholder: string, initial: string): Formlet<string> {
     return Core.formlet((c, fc, fm) => {
-        const value = fm.asValue(initial);
+        const model = fm.asValue(initial);
         const failure = FormletFailures.empty;
-        const model = FormletModels.value(value);
+        function onChange(value: string) {
+          model.value = value;
+          c.redraw();
+        }
+        const view = FormletViews
+          .element(DelayedTextInputComponent, { "initial": model.value, "placeholder": placeholder, "onChange": onChange }, FormletViews.empty)
+          ;
+        return Core.result(model.value, failure, model, view)
+        /*
         const view = FormletViews
           .element("input", { "type": "text", "value": value, "placeholder": placeholder, "className" : "form-control" }, FormletViews.empty)
           ;
-        return Core.result(value, failure, model, view)
+        */
       });
   }
 }
@@ -693,14 +760,60 @@ export class FormletComponentState<T> extends BaseFormletComponentState {
 export class FormletComponent<T> extends React.Component<{}, FormletComponentState<T>> {
   constructor(props: any, formlet: Formlet<T>) {
     super(props);
-    const fr = Core.build(formlet, FormletModels.empty);
+    const fr = Core.build(() => this.redraw(), formlet, FormletModels.empty);
     this.state = new FormletComponentState<T>(formlet, fr.model, fr.failure, fr.view);
+    this.redraw = this.redraw.bind(this);
+  }
+
+  redraw() {
+    console.log("redraw");
+    const fr = Core.build(() => this.redraw(), this.state.formlet, this.state.model);
+    this.setState(new FormletComponentState<T>(this.state.formlet, fr.model, fr.failure, fr.view));
+    this.forceUpdate();
   }
 
   render(): any {
     const r = Core.render(this.state.view);
-    console.log(r);
     return r;
-    //return React.createElement('div', null, "Hello");
+  }
+}
+
+export type DelayedTextInputProps = {
+  placeholder : string;
+  initial : string;
+  onChange : (value: string) => void;
+}
+
+export type DelayedTextInputState = {
+  value : string;
+}
+
+export class DelayedTextInputComponent extends React.Component<DelayedTextInputProps, DelayedTextInputState> {
+  constructor(props: DelayedTextInputProps) {
+    super(props);
+    this.state = { value: props.initial };
+    this.onChange = this.onChange.bind(this);
+    this.onBlur = this.onBlur.bind(this);
+  }
+
+  onChange(e: React.FormEvent<HTMLInputElement>) {
+    this.setState({ value: e.currentTarget.value });
+  }
+
+  onBlur(e: React.FormEvent<HTMLInputElement>) {
+    this.props.onChange(this.state.value);
+  }
+
+  render(): any {
+    return React.createElement(
+      "input",
+      {
+        "type": "text",
+        "value": this.state.value,
+        "placeholder": this.props.placeholder,
+        "className" : "form-control", // TODO: Break this dependency on bootstrap
+        "onChange" : this.onChange,
+        "onBlur" : this.onBlur,
+      });
   }
 }
