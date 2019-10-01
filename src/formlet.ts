@@ -101,6 +101,10 @@ export class FormletFailures {
   static fork(l: FormletFailure, r: FormletFailure): FormletFailure {
     return new FormletFailure_Fork(l, r);
   }
+
+  static failureMessage(f: FormletFailure): string {
+    return "WRONG";
+  }
 }
 
 export abstract class FormletModel {
@@ -365,6 +369,15 @@ export class FormletResult<T> {
     );
   }
 
+  withFailure(failure: FormletFailure): FormletResult<T> {
+    return new FormletResult<T>(
+      this.value,
+      failure,
+      this.model,
+      this.view
+    );
+  }
+
   withView(view: FormletView): FormletResult<T> {
     return new FormletResult<T>(
       this.value,
@@ -402,6 +415,10 @@ export class Formlet<T> extends BaseFormlet {
 
   andAlso<U>(u: Formlet<U>): Formlet<[T, U]> {
     return Core.andAlso(this, u);
+  }
+
+  apply<U>(f: (t: Formlet<T>) => Formlet<U>): Formlet<U> {
+    return f(this);
   }
 }
 
@@ -611,6 +628,24 @@ export class Core {
   }
 }
 
+export class Validate {
+  static validate<T> (validator: (v: T) => string|undefined, t: Formlet<T>): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+      const tr = t.build(c, fc, fm);
+      const v = validator(tr.value);
+      if (v) {
+        return tr.withFailure(tr.failure.join(FormletFailures.failure(fc, v)));
+      } else {
+        return tr;
+      }
+    });
+  }
+
+  static notEmpty(t : Formlet<string>): Formlet<string> {
+    return Validate.validate(v => v ? "Must not be empty" : undefined, t);
+  }
+}
+
 export class Enhance {
   static withLabel<T>(label: string, t: Formlet<T>): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
@@ -623,6 +658,26 @@ export class Enhance {
           ;
         const v = FormletViews.fork(lv, tr.view.withId(id))
         return tr.withView(v);
+      });
+  }
+
+  static withValidation<T>(t: Formlet<T>): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+        const tr = t.build(c, fc, fm);
+        const f = tr.failure;
+        if (f.isEmpty) {
+//          return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
+          return tr;
+        } else  {
+//          const v = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
+          const msg = FormletFailures.failureMessage(f);
+          const vl = tr.view;
+          const vr = FormletViews
+            .content(msg)
+            .element("div", { "className": "invalid-feedback"})
+            ;
+          return tr.withView(FormletViews.fork(vl, vr));
+        }
       });
   }
 
@@ -726,13 +781,13 @@ export class FormletComponent<T> extends React.Component<{}, FormletComponentSta
   }
 }
 
-type DelayedTextInputProps = {
+export type DelayedTextInputProps = {
   placeholder : string;
   initial : string;
   onChange : (value: string) => void;
 }
 
-type DelayedTextInputState = {
+export type DelayedTextInputState = {
   value : string;
 }
 
