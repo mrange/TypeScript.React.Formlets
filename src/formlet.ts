@@ -2,6 +2,10 @@
 import React from 'react';
 //import React = require('react')
 
+export class Unit {
+  static readonly value = new Unit();
+}
+
 export abstract class List<T> {
 }
 

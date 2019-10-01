@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent } from './formlet';
+import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Unit } from './formlet';
 
 const intoForm = (v : FormletView) => FormletViews.element("form", {}, v);
 const intoFormGroup = (v : FormletView) => FormletViews.element("div", { "className" : "form-group" }, v);
