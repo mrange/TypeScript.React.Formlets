@@ -230,7 +230,8 @@ class FormletView_WithAttributes extends FormletView {
   }
 
   render(context: FormletRenderContext, container: any[], attributes: object, id?: string): void {
-    this._view.render(context, container, Object.assign({}, this._attributes, attributes), id);
+    const merged = Object.assign({}, this._attributes, attributes);
+    this._view.render(context, container, merged, id);
   }
 }
 
@@ -642,7 +643,7 @@ export class Validate {
   }
 
   static notEmpty(t : Formlet<string>): Formlet<string> {
-    return Validate.validate(v => v ? "Must not be empty" : undefined, t);
+    return Validate.validate(v => v.length == 0 ? "Must not be empty" : undefined, t);
   }
 }
 
@@ -666,15 +667,13 @@ export class Enhance {
         const tr = t.build(c, fc, fm);
         const f = tr.failure;
         if (f.isEmpty) {
-//          return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
-          return tr;
+          return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
         } else  {
-//          const v = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
           const msg = FormletFailures.failureMessage(f);
-          const vl = tr.view;
+          const vl = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
           const vr = FormletViews
             .content(msg)
-            .element("div", { "className": "invalid-feedback"})
+            .element("div", { "className": "invalid-feedback"}) // TODO: Break this dependency on bootstrap
             ;
           return tr.withView(FormletViews.fork(vl, vr));
         }
@@ -721,7 +720,6 @@ export class Inputs {
         const model = fm.asValue(initial);
         const failure = FormletFailures.empty;
         function onChange(value: string) {
-          console.log(`onChange: ${value}`);
           model.value = value;
           c.redraw();
         }
@@ -776,7 +774,6 @@ export class FormletComponent<T> extends React.Component<{}, FormletComponentSta
 
   render(): any {
     const r = Core.render(this.state.view);
-    console.log(r);
     return r;
   }
 }
