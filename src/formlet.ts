@@ -422,7 +422,7 @@ export class Formlet<T> extends BaseFormlet {
     return Core.andAlso(this, u);
   }
 
-  apply<U>(f: (t: Formlet<T>) => Formlet<U>): Formlet<U> {
+  then<U>(f: (t: Formlet<T>) => Formlet<U>): Formlet<U> {
     return f(this);
   }
 }

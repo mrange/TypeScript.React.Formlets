@@ -60,9 +60,9 @@ class NewUser {
 function text(label: string, placeholder: string) {
   return Inputs
     .text(placeholder, "")
-    .apply(Validate.notEmpty)
-    .apply(Enhance.withValidation)
-    .apply(t => Enhance.withLabel(label, t))
+    .then(Validate.notEmpty)
+    .then(Enhance.withValidation)
+    .then(t => Enhance.withLabel(label, t))
     .mapView(intoFormGroup)
     ;
 }
@@ -72,7 +72,7 @@ const person = Core
       text("First name" , "Like 'John' or 'Jane'")
     , text("Last name"  , "Like 'Doe'")
     , (fn, ln) => new Person(fn, ln)
-    ).apply(t => Enhance.withLabeledBox("Person", t))
+    ).then(t => Enhance.withLabeledBox("Person", t))
 
 const address = Core
   .map7(
@@ -84,7 +84,7 @@ const address = Core
     , text("Zip"        , "Like 'NY12345'")
     , text("Country"    , "Like 'USA'")
     , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
-    ).apply(t => Enhance.withLabeledBox("Address", t))
+    ).then(t => Enhance.withLabeledBox("Address", t))
 
 const newUser = Core.map2(person, address, (p, a) => new NewUser(p, a, undefined));
 
