@@ -67,14 +67,14 @@ function text(label: string, placeholder: string) {
     ;
 }
 
-const person = Enhance.withLabeledBox("Person", Core
+const person = Core
   .map2(
       text("First name" , "Like 'John' or 'Jane'")
     , text("Last name"  , "Like 'Doe'")
     , (fn, ln) => new Person(fn, ln)
-    ));
+    ).apply(t => Enhance.withLabeledBox("Person", t))
 
-const address = Enhance.withLabeledBox("Address", Core
+const address = Core
   .map7(
       text("C/O"        , "Like 'Mom Doe'")
     , text("First name" , "Like 'John' or 'Jane'")
@@ -84,7 +84,7 @@ const address = Enhance.withLabeledBox("Address", Core
     , text("Zip"        , "Like 'NY12345'")
     , text("Country"    , "Like 'USA'")
     , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
-    ));
+    ).apply(t => Enhance.withLabeledBox("Address", t))
 
 const newUser = Core.map2(person, address, (p, a) => new NewUser(p, a, undefined));
 
@@ -98,8 +98,6 @@ class MyFormletComponent extends FormletComponent<NewUser> {
     super(props, formlet);
   }
 }
-
-
 
 //        <DelayedTextInputComponent placeholder="Hello" initial="There"/>
 const App: React.FC = () => {
