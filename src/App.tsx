@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Unit } from './formlet';
+import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Formlet } from './formlet';
 
 const intoForm = (v : FormletView) => FormletViews.element("form", {}, v);
 const intoFormGroup = (v : FormletView) => FormletViews.element("div", { "className" : "form-group" }, v);
@@ -57,10 +57,10 @@ class NewUser {
   readonly deliveryAddress? : Address;
 }
 
-function text(label: string, placeholder: string) {
+function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
   return Inputs
     .text(placeholder, "")
-    .then(Validate.notEmpty)
+    .then<string>(validator)  // TODO: Why is the type argument needed?
     .then(Enhance.withValidation)
     .then(t => Enhance.withLabel(label, t))
     .mapView(intoFormGroup)
@@ -69,20 +69,20 @@ function text(label: string, placeholder: string) {
 
 const person = Core
   .map2(
-      text("First name" , "Like 'John' or 'Jane'")
-    , text("Last name"  , "Like 'Doe'")
+      text(Validate.notEmpty, "First name" , "Like 'John' or 'Jane'")
+    , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
     , (fn, ln) => new Person(fn, ln)
     ).then(t => Enhance.withLabeledBox("Person", t))
 
 const address = Core
   .map7(
-      text("C/O"        , "Like 'Mom Doe'")
-    , text("First name" , "Like 'John' or 'Jane'")
-    , text("Last name"  , "Like 'Doe'")
-    , text("Address"    , "Like 'Wall st.'")
-    , text("City"       , "Like 'New york'")
-    , text("Zip"        , "Like 'NY12345'")
-    , text("Country"    , "Like 'USA'")
+      text(Validate.ok      , "C/O"        , "Like 'Mom Doe'")
+    , text(Validate.notEmpty, "First name" , "Like 'John' or 'Jane'")
+    , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
+    , text(Validate.notEmpty, "Address"    , "Like 'Wall st.'")
+    , text(Validate.notEmpty, "City"       , "Like 'New york'")
+    , text(Validate.notEmpty, "Zip"        , "Like 'NY12345'")
+    , text(Validate.ok      , "Country"    , "Like 'USA'")
     , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
     ).then(t => Enhance.withLabeledBox("Address", t))
 

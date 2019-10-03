@@ -52,6 +52,8 @@ export type FormletFailureContext = List<string>;
 export abstract class FormletFailure {
   abstract isEmpty: boolean;
 
+  abstract aggregatedMessage(): string;
+
   join(r: FormletFailure): FormletFailure {
     const te = this.isEmpty;
     const re = r.isEmpty;
@@ -69,6 +71,10 @@ export abstract class FormletFailure {
 
 class FormletFailure_Empty extends FormletFailure {
   readonly isEmpty = true;
+
+  aggregatedMessage(): string {
+    return "";
+  }
 }
 
 class FormletFailure_Failure extends FormletFailure {
@@ -80,6 +86,10 @@ class FormletFailure_Failure extends FormletFailure {
     super();
     this.context = context;
     this.message = message;
+  }
+
+  aggregatedMessage(): string {
+    return this.message;
   }
 }
 
@@ -93,6 +103,19 @@ class FormletFailure_Fork extends FormletFailure {
     this.left = left;
     this.right = right;
   }
+
+  aggregatedMessage(): string {
+    const l = this.left.aggregatedMessage();
+    const r = this.right.aggregatedMessage();
+
+    if (l && r) {
+      return l + "; " + r;
+    } else if (l) {
+      return l;
+    } else {
+      return r;
+    }
+  }
 }
 
 export class FormletFailures {
@@ -104,10 +127,6 @@ export class FormletFailures {
 
   static fork(l: FormletFailure, r: FormletFailure): FormletFailure {
     return new FormletFailure_Fork(l, r);
-  }
-
-  static failureMessage(f: FormletFailure): string {
-    return "WRONG";
   }
 }
 
@@ -658,8 +677,16 @@ export class Validate {
     });
   }
 
+  static ok<T>(t : Formlet<T>): Formlet<T> {
+    return t;
+  }
+
   static notEmpty(t : Formlet<string>): Formlet<string> {
     return Validate.validate(v => v.length == 0 ? "Must not be empty" : undefined, t);
+  }
+
+  static regex(r: RegExp, msg: string, t : Formlet<string>): Formlet<string> {
+    return Validate.validate(v => !r.test(v) ? msg : undefined, t);
   }
 }
 
@@ -685,7 +712,7 @@ export class Enhance {
         if (f.isEmpty) {
           return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
         } else  {
-          const msg = FormletFailures.failureMessage(f);
+          const msg = f.aggregatedMessage();
           const vl = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
           const vr = FormletViews
             .content(msg)
