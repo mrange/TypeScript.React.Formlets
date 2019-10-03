@@ -691,7 +691,7 @@ export class Validate {
 }
 
 export class Enhance {
-  static withLabel<T>(label: string, t: Formlet<T>): Formlet<T> {
+  static withLabel<T>(label: string, t: Formlet<T>, appendLabel?: boolean): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
         const id = c.createId();
         const lfc = Lists.cons(label, fc);
@@ -700,7 +700,8 @@ export class Enhance {
           .content(label)
           .element("label", {"htmlFor": id})
           ;
-        const v = FormletViews.fork(lv, tr.view.withId(id))
+        const tv = tr.view.withId(id);
+        const v = appendLabel ? FormletViews.fork(tv, lv) : FormletViews.fork(lv, tv);
         return tr.withView(v);
       });
   }
@@ -757,6 +758,11 @@ export class Enhance {
   }
 }
 
+type SelectOption<T> = {
+  key: string;
+  value: T;
+}
+
 export class Inputs {
   static text(placeholder: string, initial: string): Formlet<string> {
     return Core.formlet((c, fc, fm) => {
@@ -773,6 +779,49 @@ export class Inputs {
           .element(DelayedTextInputComponent, props, FormletViews.empty)
           ;
         return Core.result(model.value, failure, model, view)
+      });
+  }
+
+  static checkbox<T>(unchecked: T, checked: T): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+        const model = fm.asValue("off");
+        const failure = FormletFailures.empty;
+        function onChange(e: React.FormEvent<HTMLInputElement>) {
+          model.value = e.currentTarget.value;
+          c.redraw();
+        }
+
+        // TODO: Break the bootstrap dep "form-check-input"
+        const props = { "type": "checkbox", "className": "form-check-input", "onChange": onChange };
+        const view = FormletViews
+          .element("input", props, FormletViews.empty)
+          ;
+        return Core.result(model.value == "on" ? checked : unchecked, failure, model, view)
+      });
+  }
+
+  static select<T>(options: SelectOption<T>[]): Formlet<T> {
+    if (options.length == 0) {
+      throw new Error("select - expected at least one option");
+    }
+    const content = FormletViews.group(options.map(o => FormletViews.content(o.key).element("option", {})));
+    return Core.formlet((c, fc, fm) => {
+        const model = fm.asValue(options[0].key);
+        const failure = FormletFailures.empty;
+        function onChange(e: React.FormEvent<HTMLSelectElement>) {
+          model.value = e.currentTarget.value;
+          c.redraw();
+        }
+
+        const o = options.find(o => o.key == model.value);
+        const v = o ? o.value : options[0].value;
+
+        // TODO: Break the bootstrap dep "form-control"
+        const props = { "className": "form-control", "onChange": onChange };
+        const view = FormletViews
+          .element("select", props, content)
+          ;
+        return Core.result(v, failure, model, view)
       });
   }
 }
