@@ -201,6 +201,16 @@ export abstract class FormletView {
   element(element: any, attributes: object): FormletView {
     return FormletViews.element(element, attributes, this);
   }
+
+  static mergeAttributes(left: any, right: any): any {
+    const a = Object.assign({}, left, right);
+    const lc = left.className;
+    const rc = right.className;
+    if (lc && rc) {
+      a.className = lc + " " + rc;
+    }
+    return a;
+  }
 }
 
 class FormletView_Empty extends FormletView {
@@ -234,7 +244,7 @@ class FormletView_WithAttributes extends FormletView {
   }
 
   render(context: FormletRenderContext, container: any[], attributes: object, id?: string): void {
-    const merged = Object.assign({}, this._attributes, attributes);
+    const merged = FormletView.mergeAttributes(this._attributes, attributes);
     this._view.render(context, container, merged, id);
   }
 }
@@ -267,8 +277,10 @@ class FormletView_Element extends FormletView {
   render(context: FormletRenderContext, container: any[], attributes: object, id?: string): void {
     const i: any[] = [];
     this._view.render(context, i, {});
-    const idAttribute: object = id ? { "id" : id } : {};
-    const merged = Object.assign({}, this._attributes, attributes, idAttribute)
+    const merged = FormletView.mergeAttributes(this._attributes, attributes);
+    if (id) {
+      merged.id = id;
+    }
     if (i.length == 0) {
       container.push(React.createElement(this._element, merged, null));
     } else if (i.length == 1) {
@@ -727,15 +739,13 @@ export class Inputs {
           model.value = value;
           c.redraw();
         }
+
+        // TODO: Break the bootstrap dep "form-control"
+        const props = { "initial": model.value, "placeholder": placeholder, "className": "form-control", "onChange": onChange };
         const view = FormletViews
-          .element(DelayedTextInputComponent, { "initial": model.value, "placeholder": placeholder, "onChange": onChange }, FormletViews.empty)
+          .element(DelayedTextInputComponent, props, FormletViews.empty)
           ;
         return Core.result(model.value, failure, model, view)
-        /*
-        const view = FormletViews
-          .element("input", { "type": "text", "value": value, "placeholder": placeholder, "className" : "form-control" }, FormletViews.empty)
-          ;
-        */
       });
   }
 }
@@ -783,9 +793,10 @@ export class FormletComponent<T> extends React.Component<{}, FormletComponentSta
 }
 
 export type DelayedTextInputProps = {
-  placeholder : string;
-  initial : string;
-  onChange : (value: string) => void;
+  placeholder? : string;
+  initial? : string;
+  className? : string;
+  onChange? : (value: string) => void;
 }
 
 export type DelayedTextInputState = {
@@ -795,7 +806,8 @@ export type DelayedTextInputState = {
 export class DelayedTextInputComponent extends React.Component<DelayedTextInputProps, DelayedTextInputState> {
   constructor(props: DelayedTextInputProps) {
     super(props);
-    this.state = { value: props.initial };
+    const value = props.initial ? props.initial : "";
+    this.state = { value: value };
     this.onChange = this.onChange.bind(this);
     this.onBlur = this.onBlur.bind(this);
   }
@@ -805,7 +817,10 @@ export class DelayedTextInputComponent extends React.Component<DelayedTextInputP
   }
 
   onBlur(e: React.FormEvent<HTMLInputElement>) {
-    this.props.onChange(this.state.value);
+    const onChange = this.props.onChange;
+    if (onChange) {
+      onChange(this.state.value);
+    }
   }
 
   render(): any {
@@ -815,7 +830,7 @@ export class DelayedTextInputComponent extends React.Component<DelayedTextInputP
         "type": "text",
         "value": this.state.value,
         "placeholder": this.props.placeholder,
-        "className" : "form-control", // TODO: Break this dependency on bootstrap
+        "className" : this.props.className,
         "onChange" : this.onChange,
         "onBlur" : this.onBlur,
       });
