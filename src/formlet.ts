@@ -7,9 +7,13 @@ export class Unit {
 }
 
 export abstract class List<T> {
+  abstract fold<S>(f: (s: S, t: T) => S, z: S): S;
 }
 
 class List_Empty<T> extends List<T> {
+  fold<S>(f: (s: S, t: T) => S, z: S): S {
+    return z;
+  }
 }
 
 class List_Cons<T> extends List<T> {
@@ -21,10 +25,15 @@ class List_Cons<T> extends List<T> {
     this.head = head;
     this.tail = tail;
   }
+
+  fold<S>(f: (s: S, t: T) => S, z: S): S {
+    const s = f(z, this.head);
+    return this.tail.fold(f, s);
+  }
 }
 
 export class Lists {
-  static readonly empty = new List_Empty<undefined>();
+  static readonly empty = new List_Empty<never>();
   static cons<T>(head: T, tail: List<T>): List<T> {
     return new List_Cons<T>(head, tail);
   }
@@ -52,7 +61,9 @@ export type FormletFailureContext = List<string>;
 export abstract class FormletFailure {
   abstract isEmpty: boolean;
 
-  abstract aggregatedMessage(): string;
+  abstract aggregateFailures(failures: string[]): void;
+
+  abstract aggregateContextfulFailures(failures: [string, string][]): void;
 
   join(r: FormletFailure): FormletFailure {
     const te = this.isEmpty;
@@ -72,8 +83,10 @@ export abstract class FormletFailure {
 class FormletFailure_Empty extends FormletFailure {
   readonly isEmpty = true;
 
-  aggregatedMessage(): string {
-    return "";
+  aggregateFailures(failures: string[]): void {
+  }
+
+  aggregateContextfulFailures(failures: [string, string][]): void {
   }
 }
 
@@ -88,8 +101,15 @@ class FormletFailure_Failure extends FormletFailure {
     this.message = message;
   }
 
-  aggregatedMessage(): string {
-    return this.message;
+  aggregateFailures(failures: string[]): void {
+    // TODO: Compute context
+    failures.push(this.message);
+  }
+
+  aggregateContextfulFailures(failures: [string, string][]): void {
+    const ctx: string[] = []
+    this.context.fold((s, v) => { ctx.push(v); return s; }, Unit.value);
+    failures.push([ctx.reverse().join(" - "), this.message]);
   }
 }
 
@@ -104,17 +124,14 @@ class FormletFailure_Fork extends FormletFailure {
     this.right = right;
   }
 
-  aggregatedMessage(): string {
-    const l = this.left.aggregatedMessage();
-    const r = this.right.aggregatedMessage();
+  aggregateFailures(failures: string[]): void {
+    this.left.aggregateFailures(failures);
+    this.right.aggregateFailures(failures);
+  }
 
-    if (l && r) {
-      return l + "; " + r;
-    } else if (l) {
-      return l;
-    } else {
-      return r;
-    }
+  aggregateContextfulFailures(failures: [string, string][]): void {
+    this.left.aggregateContextfulFailures(failures);
+    this.right.aggregateContextfulFailures(failures);
   }
 }
 
@@ -647,7 +664,7 @@ export class Core {
 
   static build<T>(redraw: () => void, t: Formlet<T>, model: FormletModel): FormletResult<T> {
     const ctx = new FormletBuildContext(redraw);
-    return t.build(ctx, [], model);
+    return t.build(ctx, Lists.empty, model);
   }
 
   static render(v: FormletView): any {
@@ -713,7 +730,9 @@ export class Enhance {
         if (f.isEmpty) {
           return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
         } else  {
-          const msg = f.aggregatedMessage();
+          const fs : string[] = [];
+          f.aggregateFailures(fs);
+          const msg = fs.join("; ");
           const vl = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
           const vr = FormletViews
             .content(msg)
@@ -726,6 +745,7 @@ export class Enhance {
 
   static withBox<T>(t: Formlet<T>): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
+        // TODO: Break the bootstrap dep
         const tr = t.build(c, fc, fm);
         const body = tr
           .view
@@ -739,6 +759,7 @@ export class Enhance {
   }
 
   static withLabeledBox<T>(label: string, t: Formlet<T>): Formlet<T> {
+    // TODO: Break the bootstrap dep
     const header = FormletViews
       .content(label)
       .element("div", { "className" : "card-header"})
@@ -756,9 +777,67 @@ export class Enhance {
         return tr.withView(v);
       });
   }
+
+  static withSubmit<T>(t: Formlet<T>): Formlet<T> {
+    function button(label: string, className: string, disabled: boolean) {
+      return FormletViews
+        .content(label)
+        .element("button", { "disabled": disabled, "style": {"marginRight": "8px"}, "className": "btn " + className})
+        ;
+    }
+
+    const disabledSubmit = button("Submit", "btn-dark", true);
+    const submit = button("Submit", "btn-dark", false);
+    const reset = button("Reset", "btn-warning", false);
+
+    function header(label: string, submitButton: FormletView) {
+      const text = FormletViews.content(label);
+      return FormletViews
+        .group([submitButton, reset, text])
+        .element("div", { "className" : "card-header"})
+        ;
+    }
+
+    const goodHeader = header("Ready to submit", submit);
+    const badHeader = header("Fix the validation error(s)", disabledSubmit);
+    const goodBody = FormletViews
+      .content("No problems found.")
+      .element("div", { "className" : "card-body"})
+      ;
+    const good = FormletViews.fork(goodHeader, goodBody)
+        .element("div", { "className" : "card mb-3 text-white bg-success"})
+        ;
+
+    function td(content: string) {
+      return FormletViews.content(content).element("td", {});
+    }
+
+    return Core.formlet((c, fc, fm) => {
+      const tr = t.build(c, fc, fm);
+      if (tr.failure.isEmpty) {
+        const v = FormletViews.fork(good, tr.view);
+        return tr.withView(v);
+      } else {
+        const fs: [string, string][] = [];
+        tr.failure.aggregateContextfulFailures(fs);
+        const trs = fs.map(cm => FormletViews.group([td(cm[0]), td("->"), td(cm[1])]).element("tr", {}));
+        const table = FormletViews.group(trs).element("tbody", {}).element("table", {});
+        const badBody = table
+          .element("div", { "className" : "card-body"})
+          ;
+        const bad = FormletViews.fork(badHeader, badBody)
+          .element("div", { "className" : "card mb-3 text-white bg-danger"})
+          ;
+
+        const v = FormletViews.fork(bad, tr.view);
+        return tr.withView(v);
+      }
+    });
+  }
+
 }
 
-type SelectOption<T> = {
+export type SelectOption<T> = {
   key: string;
   value: T;
 }

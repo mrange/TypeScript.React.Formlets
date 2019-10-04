@@ -131,7 +131,8 @@ const deliveryAddress = Core.unwrap(checkbox<Formlet<Address|undefined>>("Use de
 const newUser = Core.map3(entity, invoiceAddress, deliveryAddress, (e, ia, da) => new NewUser(e, ia, da));
 
 const formlet =
-    newUser
+  newUser
+    .then(Enhance.withSubmit)
     .mapView(intoForm)
     ;
 
