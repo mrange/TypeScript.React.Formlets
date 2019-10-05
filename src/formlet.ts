@@ -40,11 +40,16 @@ export class Lists {
 }
 
 export class FormletBuildContext {
-  readonly redraw: () => void
+  readonly redrawForm: () => void
+  readonly resetForm: () => void
+  readonly submitForm: () => void
+
   private currentId = 0;
 
-  constructor(redraw: () => void) {
-    this.redraw = redraw;
+  constructor(redrawForm: () => void, resetForm: () => void, submitForm: () => void) {
+    this.redrawForm = redrawForm;
+    this.resetForm = resetForm;
+    this.submitForm = submitForm;
   }
 
   createId(): string {
@@ -149,6 +154,7 @@ export class FormletFailures {
 
 export abstract class FormletModel {
   abstract asValue(initial: string): FormletModel_Value;
+
   abstract asFork(): [FormletModel, FormletModel];
 
   join(r: FormletModel): FormletModel {
@@ -662,9 +668,8 @@ export class Core {
     });
   }
 
-  static build<T>(redraw: () => void, t: Formlet<T>, model: FormletModel): FormletResult<T> {
-    const ctx = new FormletBuildContext(redraw);
-    return t.build(ctx, Lists.empty, model);
+  static build<T>(context: FormletBuildContext, t: Formlet<T>, model: FormletModel): FormletResult<T> {
+    return t.build(context, Lists.empty, model);
   }
 
   static render(v: FormletView): any {
@@ -779,47 +784,66 @@ export class Enhance {
   }
 
   static withSubmit<T>(t: Formlet<T>): Formlet<T> {
-    function button(label: string, className: string, disabled: boolean) {
+    function button(label: string, className: string, onClick?: (e: React.FormEvent<HTMLInputElement>) => void) {
+      const disabled = !onClick
+      const props = {
+        "className": "btn " + className,
+        "disabled": disabled,
+        "onClick": onClick,
+        "style": {"marginRight": "8px"},
+        "type": "button",
+        "value": label,
+      };
       return FormletViews
-        .content(label)
-        .element("button", { "disabled": disabled, "style": {"marginRight": "8px"}, "className": "btn " + className})
+        .element("input", props, FormletViews.empty)
         ;
     }
 
-    const disabledSubmit = button("Submit", "btn-dark", true);
-    const submit = button("Submit", "btn-dark", false);
-    const reset = button("Reset", "btn-warning", false);
-
-    function header(label: string, submitButton: FormletView) {
+    function header(label: string, submit: FormletView, reset: FormletView) {
       const text = FormletViews.content(label);
       return FormletViews
-        .group([submitButton, reset, text])
+        .group([submit, reset, text])
         .element("div", { "className" : "card-header"})
         ;
     }
-
-    const goodHeader = header("Ready to submit", submit);
-    const badHeader = header("Fix the validation error(s)", disabledSubmit);
-    const goodBody = FormletViews
-      .content("No problems found.")
-      .element("div", { "className" : "card-body"})
-      ;
-    const good = FormletViews.fork(goodHeader, goodBody)
-        .element("div", { "className" : "card mb-3 text-white bg-success"})
-        ;
 
     function td(content: string) {
       return FormletViews.content(content).element("td", {});
     }
 
+    const disabledSubmit = button("Submit", "btn-dark");
+    const goodBody = FormletViews
+      .content("No problems found.")
+      .element("div", { "className" : "card-body"})
+      ;
+
     return Core.formlet((c, fc, fm) => {
       const tr = t.build(c, fc, fm);
+
+      function onReset(e: React.FormEvent<HTMLInputElement>): void {
+        c.resetForm();
+      }
+
+      function onSubmit(e: React.FormEvent<HTMLInputElement>): void {
+        c.submitForm();
+      }
+
+      const reset = button("Reset", "btn-warning", onReset);
+
       if (tr.failure.isEmpty) {
+        const submit = button("Submit", "btn-dark", onSubmit);
+        const goodHeader = header("Ready to submit", submit, reset);
+        const good = FormletViews
+          .fork(goodHeader, goodBody)
+          .element("div", { "className" : "card mb-3 text-white bg-success"})
+          ;
         const v = FormletViews.fork(good, tr.view);
+
         return tr.withView(v);
       } else {
         const fs: [string, string][] = [];
         tr.failure.aggregateContextfulFailures(fs);
+        const badHeader = header("Fix the validation error(s)", disabledSubmit, reset);
         const trs = fs.map(cm => FormletViews.group([td(cm[0]), td("->"), td(cm[1])]).element("tr", {}));
         const table = FormletViews.group(trs).element("tbody", {}).element("table", {});
         const badBody = table
@@ -849,11 +873,16 @@ export class Inputs {
         const failure = FormletFailures.empty;
         function onChange(value: string) {
           model.value = value;
-          c.redraw();
+          c.redrawForm();
         }
 
         // TODO: Break the bootstrap dep "form-control"
-        const props = { "initial": model.value, "placeholder": placeholder, "className": "form-control", "onChange": onChange };
+        const props = {
+          "className": "form-control",
+          "initial": model.value,
+          "onChange": onChange,
+          "placeholder": placeholder,
+        };
         const view = FormletViews
           .element(DelayedTextInputComponent, props, FormletViews.empty)
           ;
@@ -867,11 +896,15 @@ export class Inputs {
         const failure = FormletFailures.empty;
         function onChange(e: React.FormEvent<HTMLInputElement>) {
           model.value = e.currentTarget.value;
-          c.redraw();
+          c.redrawForm();
         }
 
         // TODO: Break the bootstrap dep "form-check-input"
-        const props = { "type": "checkbox", "className": "form-check-input", "onChange": onChange };
+        const props = {
+          "className": "form-check-input",
+          "onChange": onChange,
+          "type": "checkbox",
+        };
         const view = FormletViews
           .element("input", props, FormletViews.empty)
           ;
@@ -889,14 +922,17 @@ export class Inputs {
         const failure = FormletFailures.empty;
         function onChange(e: React.FormEvent<HTMLSelectElement>) {
           model.value = e.currentTarget.value;
-          c.redraw();
+          c.redrawForm();
         }
 
         const o = options.find(o => o.key == model.value);
         const v = o ? o.value : options[0].value;
 
         // TODO: Break the bootstrap dep "form-control"
-        const props = { "className": "form-control", "onChange": onChange };
+        const props = {
+          "className": "form-control",
+          "onChange": onChange,
+        };
         const view = FormletViews
           .element("select", props, content)
           ;
@@ -905,7 +941,7 @@ export class Inputs {
   }
 }
 
-export class BaseFormletComponentState {
+export class FormletComponentState {
   readonly model: FormletModel;
   readonly failure: FormletFailure;
   readonly view: FormletView;
@@ -917,34 +953,58 @@ export class BaseFormletComponentState {
   }
 }
 
-export class FormletComponentState<T> extends BaseFormletComponentState {
-  readonly formlet : Formlet<T>;
+export abstract class FormletComponent<T> extends React.Component<{}, FormletComponentState> {
+  readonly formlet: Formlet<T>;
+  private readonly buildContext: FormletBuildContext;
 
-  constructor(formlet : Formlet<T>, model: FormletModel, failure: FormletFailure, view: FormletView) {
-    super(model, failure, view);
-    this.formlet = formlet;
-  }
-}
-
-export class FormletComponent<T> extends React.Component<{}, FormletComponentState<T>> {
   constructor(props: any, formlet: Formlet<T>) {
     super(props);
-    const fr = Core.build(() => this.redraw(), formlet, FormletModels.empty);
-    this.state = new FormletComponentState<T>(formlet, fr.model, fr.failure, fr.view);
-    this.redraw = this.redraw.bind(this);
+
+    this.formlet = formlet;
+
+    this.redrawForm = this.redrawForm.bind(this);
+    this.resetForm = this.resetForm.bind(this);
+    this.submitForm = this.submitForm.bind(this);
+
+    this.buildContext = new FormletBuildContext(this.redrawForm, this.resetForm, this.submitForm);
+
+    const fr = Core.build(this.buildContext, this.formlet, FormletModels.empty);
+    this.state = new FormletComponentState(fr.model, fr.failure, fr.view);
   }
 
-  redraw() {
-    console.log("redraw");
-    const fr = Core.build(() => this.redraw(), this.state.formlet, this.state.model);
-    this.setState(new FormletComponentState<T>(this.state.formlet, fr.model, fr.failure, fr.view));
+  redrawForm() {
+    console.log("redrawForm");
+
+    const fr = Core.build(this.buildContext, this.formlet, this.state.model);
+    this.setState(new FormletComponentState(fr.model, fr.failure, fr.view));
     this.forceUpdate();
+  }
+
+  resetForm() {
+    console.log("resetForm");
+
+    const fr = Core.build(this.buildContext, this.formlet, FormletModels.empty);
+    this.setState(new FormletComponentState(fr.model, fr.failure, fr.view));
+    this.forceUpdate();
+  }
+
+  submitForm() {
+    console.log("submitForm");
+
+    const fr = Core.build(this.buildContext, this.formlet, this.state.model);
+    if (fr.failure.isEmpty) {
+      this.onSubmit(fr.value);
+    } else {
+      console.log("Can't submit form because value didn't validate");
+    }
   }
 
   render(): any {
     const r = Core.render(this.state.view);
     return r;
   }
+
+  abstract onSubmit(value: T): void;
 }
 
 export type DelayedTextInputProps = {

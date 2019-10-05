@@ -140,6 +140,12 @@ class MyFormletComponent extends FormletComponent<NewUser> {
   constructor(props: any) {
     super(props, formlet);
   }
+
+  onSubmit(v: NewUser): void {
+    console.log("Cool a new user!");
+    console.log(v);
+  }
+
 }
 
 const App: React.FC = () => {
