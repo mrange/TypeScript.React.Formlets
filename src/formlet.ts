@@ -475,6 +475,10 @@ export class Formlet<T> extends BaseFormlet {
     return Core.andAlso(this, u);
   }
 
+  surroundWith(element: any, attributes: object): Formlet<T> {
+    return Core.surroundWith(this, element, attributes);
+  }
+
   then<U>(f: (t: Formlet<T>) => Formlet<U>): Formlet<U> {
     return f(this);
   }
@@ -667,10 +671,10 @@ export class Core {
     });
   }
 
-  static element<T>(t: Formlet<T>, m: (tv: FormletView) => FormletView) : Formlet<T> {
+  static surroundWith<T>(t: Formlet<T>, element: any, attributes: object) : Formlet<T> {
     return Core.formlet((c, fc, fm) => {
       const tr = t.build(c, fc, fm);
-      return tr.withView(m(tr.view));
+      return tr.withView(tr.view.element(element, attributes));
     });
   }
 

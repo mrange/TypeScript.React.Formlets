@@ -3,10 +3,6 @@ import './App.css';
 import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Formlet, Unit } from './formlet';
 import * as demo from './demo';
 
-const intoForm = (v : FormletView) => FormletViews.element("form", {}, v);
-const intoFormGroup = (v : FormletView) => FormletViews.element("div", { "className" : "form-group" }, v);
-const intoFormCheck = (v : FormletView) => FormletViews.element("div", { "className" : "form-group form-check" }, v);
-
 class Person
 {
   constructor(firstName: string, lastName: string, socialNo: string) {
@@ -80,7 +76,7 @@ function text(validator: (t: Formlet<string>) => Formlet<string>, label: string,
     .then<string>(validator)  // TODO: Why is the type argument needed?
     .then(Enhance.withValidation)
     .then(t => Enhance.withLabel(t, label))
-    .mapView(intoFormGroup)
+    .surroundWith("div", { "className": "form-group" })
     ;
 }
 
@@ -88,7 +84,7 @@ function checkbox<T>(label: string, unchecked: T, checked: T) {
   return Inputs
     .checkbox(unchecked, checked)
     .then(t => Enhance.withLabel(t, label, true))
-    .mapView(intoFormCheck)
+    .surroundWith("div", { "className": "form-group form-check" })
     ;
 }
 
@@ -134,7 +130,7 @@ const newUser = Core.map3(entity, invoiceAddress, deliveryAddress, (e, ia, da) =
 const formlet =
   newUser
     .then(Enhance.withSubmit)
-    .mapView(intoForm)
+    .surroundWith("form", {})
     ;
 
 class NewUserComponent extends FormletComponent<NewUser> {
@@ -149,7 +145,11 @@ class NewUserComponent extends FormletComponent<NewUser> {
 
 }
 
-const demoFormlet = demo.formlet.map(v => Unit.value).mapView(intoForm)
+const demoFormlet = demo
+  .formlet
+  .map(v => Unit.value)
+  .surroundWith("form", {})
+  ;
 
 class DemoComponent extends FormletComponent<Unit> {
   constructor(props: any) {
