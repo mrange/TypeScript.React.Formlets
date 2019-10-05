@@ -711,15 +711,15 @@ export class Validate {
     });
   }
 
-  static ok<T>(t : Formlet<T>): Formlet<T> {
+  static ok<T>(t: Formlet<T>): Formlet<T> {
     return t;
   }
 
-  static notEmpty(t : Formlet<string>): Formlet<string> {
+  static notEmpty(t: Formlet<string>): Formlet<string> {
     return Validate.validate(t, v => v.length == 0 ? "Must not be empty" : undefined);
   }
 
-  static regex(r: RegExp, msg: string, t : Formlet<string>): Formlet<string> {
+  static regex(t: Formlet<string>, r: RegExp, msg: string): Formlet<string> {
     return Validate.validate(t, v => !r.test(v) ? msg : undefined);
   }
 }
