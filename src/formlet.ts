@@ -1,6 +1,5 @@
 /*eslint-disable */
 import React from 'react';
-//import React = require('react')
 
 export class Unit {
   static readonly value = new Unit();
@@ -668,6 +667,15 @@ export class Core {
     });
   }
 
+  static element<T>(t: Formlet<T>, m: (tv: FormletView) => FormletView) : Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+      const tr = t.build(c, fc, fm);
+      return tr.withView(m(tr.view));
+    });
+  }
+
+
+
   static build<T>(context: FormletBuildContext, t: Formlet<T>, model: FormletModel): FormletResult<T> {
     return t.build(context, Lists.empty, model);
   }
@@ -687,7 +695,7 @@ export class Core {
 }
 
 export class Validate {
-  static validate<T> (validator: (v: T) => string|undefined, t: Formlet<T>): Formlet<T> {
+  static validate<T> (t: Formlet<T>, validator: (v: T) => string|undefined): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
       const tr = t.build(c, fc, fm);
       const v = validator(tr.value);
@@ -704,16 +712,16 @@ export class Validate {
   }
 
   static notEmpty(t : Formlet<string>): Formlet<string> {
-    return Validate.validate(v => v.length == 0 ? "Must not be empty" : undefined, t);
+    return Validate.validate(t, v => v.length == 0 ? "Must not be empty" : undefined);
   }
 
   static regex(r: RegExp, msg: string, t : Formlet<string>): Formlet<string> {
-    return Validate.validate(v => !r.test(v) ? msg : undefined, t);
+    return Validate.validate(t, v => !r.test(v) ? msg : undefined);
   }
 }
 
 export class Enhance {
-  static withLabel<T>(label: string, t: Formlet<T>, appendLabel?: boolean): Formlet<T> {
+  static withLabel<T>(t: Formlet<T>, label: string, appendLabel?: boolean): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
         const id = c.createId();
         const lfc = Lists.cons(label, fc);
@@ -763,7 +771,7 @@ export class Enhance {
       });
   }
 
-  static withLabeledBox<T>(label: string, t: Formlet<T>): Formlet<T> {
+  static withLabeledBox<T>(t: Formlet<T>, label: string): Formlet<T> {
     // TODO: Break the bootstrap dep
     const header = FormletViews
       .content(label)

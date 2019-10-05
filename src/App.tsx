@@ -79,7 +79,7 @@ function text(validator: (t: Formlet<string>) => Formlet<string>, label: string,
     .text(placeholder, "")
     .then<string>(validator)  // TODO: Why is the type argument needed?
     .then(Enhance.withValidation)
-    .then(t => Enhance.withLabel(label, t))
+    .then(t => Enhance.withLabel(t, label))
     .mapView(intoFormGroup)
     ;
 }
@@ -87,7 +87,7 @@ function text(validator: (t: Formlet<string>) => Formlet<string>, label: string,
 function checkbox<T>(label: string, unchecked: T, checked: T) {
   return Inputs
     .checkbox(unchecked, checked)
-    .then(t => Enhance.withLabel(label, t, true))
+    .then(t => Enhance.withLabel(t, label, true))
     .mapView(intoFormCheck)
     ;
 }
@@ -98,14 +98,14 @@ const person: Formlet<Entity> = Core
     , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
     , text(Validate.notEmpty, "Social no"  , "Like '010190-23902'")
     , (fn, ln, sno) => new Person(fn, ln, sno)
-    ).then(t => Enhance.withLabeledBox("Person", t))
+    ).then(t => Enhance.withLabeledBox(t, "Person"))
 
 const company: Formlet<Entity> = Core
   .map2(
       text(Validate.notEmpty, "Company name"  , "Like 'Amazon'")
     , text(Validate.notEmpty, "Company no"    , "Like 'MVA120934'")
     , (cn, cno) => new Company(cn, cno)
-    ).then(t => Enhance.withLabeledBox("Company", t))
+    ).then(t => Enhance.withLabeledBox(t, "Company"))
 
 const options = [{"key": "Person", "value": person}, {"key": "Company", "value": company}];
 
@@ -122,7 +122,7 @@ function address(label: string) {
       , text(Validate.notEmpty, "Zip"        , "Like 'NY12345'")
       , text(Validate.ok      , "Country"    , "Like 'USA'")
       , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
-      ).then(t => Enhance.withLabeledBox(label, t))
+      ).then(t => Enhance.withLabeledBox(t, label))
       ;
 }
 
