@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
-import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Formlet } from './formlet';
+import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Formlet, Unit } from './formlet';
+import * as demo from './demo';
 
 const intoForm = (v : FormletView) => FormletViews.element("form", {}, v);
 const intoFormGroup = (v : FormletView) => FormletViews.element("div", { "className" : "form-group" }, v);
@@ -136,7 +137,7 @@ const formlet =
     .mapView(intoForm)
     ;
 
-class MyFormletComponent extends FormletComponent<NewUser> {
+class NewUserComponent extends FormletComponent<NewUser> {
   constructor(props: any) {
     super(props, formlet);
   }
@@ -148,11 +149,23 @@ class MyFormletComponent extends FormletComponent<NewUser> {
 
 }
 
+const demoFormlet = demo.formlet.map(v => Unit.value).mapView(intoForm)
+
+class DemoComponent extends FormletComponent<Unit> {
+  constructor(props: any) {
+    super(props, demoFormlet);
+  }
+
+  onSubmit(v: Unit): void {
+  }
+
+}
+
 const App: React.FC = () => {
   return (
     <div className="App">
       <header className="App-header">
-        <MyFormletComponent/>
+        <NewUserComponent/>
       </header>
     </div>
   );
