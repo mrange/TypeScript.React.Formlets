@@ -905,9 +905,10 @@ export class Inputs {
   static checkbox<T>(unchecked: T, checked: T): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
         const model = fm.asValue("off");
+        const isChecked = model.value == "on";
         const failure = FormletFailures.empty;
         function onChange(e: React.FormEvent<HTMLInputElement>) {
-          model.value = e.currentTarget.value;
+          model.value = isChecked ? "off" : "on";
           c.redrawForm();
         }
 
@@ -915,6 +916,7 @@ export class Inputs {
         const props = {
           "className": "form-check-input",
           "onChange": onChange,
+          "checked": isChecked,
           "type": "checkbox",
         };
         const view = FormletViews
