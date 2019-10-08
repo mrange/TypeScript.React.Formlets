@@ -930,7 +930,7 @@ export class Inputs {
     if (options.length == 0) {
       throw new Error("select - expected at least one option");
     }
-    const content = FormletViews.group(options.map(o => FormletViews.content(o.key).element("option", {})));
+    const content = FormletViews.group(options.map(o => FormletViews.content(o.key).element("option", { "value": o.key})));
     return Core.formlet((c, fc, fm) => {
         const model = fm.asValue(options[0].key);
         const failure = FormletFailures.empty;
@@ -946,6 +946,7 @@ export class Inputs {
         const props = {
           "className": "form-control",
           "onChange": onChange,
+          "value": model.value,
         };
         const view = FormletViews
           .element("select", props, content)
