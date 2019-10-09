@@ -879,7 +879,7 @@ export type SelectOption<T> = {
 }
 
 export class Inputs {
-  static text(placeholder: string, initial: string): Formlet<string> {
+  static text(placeholder: string, initial: string = ""): Formlet<string> {
     return Core.formlet((c, fc, fm) => {
         const model = fm.asValue(initial);
         const failure = FormletFailures.empty;
@@ -902,9 +902,9 @@ export class Inputs {
       });
   }
 
-  static checkbox<T>(unchecked: T, checked: T): Formlet<T> {
+  static checkbox<T>(unchecked: T, checked: T, initial: boolean = false): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
-        const model = fm.asValue("off");
+        const model = fm.asValue(initial ? "on" : "off");
         const isChecked = model.value == "on";
         const failure = FormletFailures.empty;
         function onChange(e: React.FormEvent<HTMLInputElement>) {
