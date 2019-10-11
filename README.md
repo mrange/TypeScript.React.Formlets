@@ -38,6 +38,17 @@ class NewUserComponent extends FormletComponent<NewUser> {
 }
 ```
 
+# TODO
+
+1. Nail the API (style, naming)
+2. DelayedTextInputComponent bugs fixed
+3. Break dependency between Core and Bootstrap
+4. Add Bootstrap module (for easy integration Boostrap forms)
+5. Document formlet design
+6. Examples
+7. Handle side-effects (like server validation or server lookup)
+
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
