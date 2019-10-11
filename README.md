@@ -3,14 +3,15 @@
 Formlets is a cool idea and I want to explore how formlets can look in Typescript/React.
 
 ```typescript
-const person = Enhance.withLabeledBox("Person", Core
+const person = Core
   .map2(
       text("First name" , "Like 'John' or 'Jane'")
     , text("Last name"  , "Like 'Doe'")
-    , (fn, ln) => new Person(fn, ln)
-    ));
+    , mkPerson
+    ).then(t => Enhance.withLabeledBox(t, "Person"))
+    ;
 
-const address = Enhance.withLabeledBox("Address", Core
+const address = Core
   .map7(
       text("C/O"        , "Like 'Mom Doe'")
     , text("First name" , "Like 'John' or 'Jane'")
@@ -19,15 +20,22 @@ const address = Enhance.withLabeledBox("Address", Core
     , text("City"       , "Like 'New york'")
     , text("Zip"        , "Like 'NY12345'")
     , text("Country"    , "Like 'USA'")
-    , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
-    ));
-
-const newUser = Core.map2(person, address, (p, a) => new NewUser(p, a, undefined));
-
-const formlet =
-    newUser
-    .mapView(intoForm)
+    , mkAddress
+    ).then(t => Enhance.withLabeledBox(t, "Company"))
     ;
+
+const newUser = Core.map2(person, address, mkNewUser);
+
+class NewUserComponent extends FormletComponent<NewUser> {
+  constructor(props: any) {
+    super(props, formlet);
+  }
+
+  onSubmit(v: NewUser): void {
+    console.log("Cool a new user!");
+    console.log(v);
+  }
+}
 ```
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

@@ -3,77 +3,59 @@ import './App.css';
 import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Formlet, Unit } from './formlet';
 import * as demo from './demo';
 
-class Person
-{
-  constructor(firstName: string, lastName: string, socialNo: string) {
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.socialNo = socialNo;
-  }
-
-  readonly firstName  : string;
-  readonly lastName   : string;
-  readonly socialNo   : string;
+type Person  = {
+  firstName : string,
+  lastName  : string,
+  socialNo  : string,
+}
+function mkPerson(fn: string, ln: string, sno: string): Person {
+  return { firstName: fn, lastName: ln, socialNo: sno };
 }
 
-class Company
-{
-  constructor(companyName: string, companyNo: string) {
-    this.companyName = companyName;
-    this.companyNo = companyNo;
-  }
-
-  readonly companyName  : string;
-  readonly companyNo    : string;
+type Company  = {
+  companyName : string,
+  companyNo   : string,
 }
-
-class Address
-{
-  constructor(
-      carryOver : string
-    , firstName : string
-    , lastName  : string
-    , address   : string
-    , city      : string
-    , zip       : string
-    , country   : string
-    ) {
-    this.carryOver  = carryOver;
-    this.firstName  = firstName;
-    this.lastName   = lastName ;
-    this.address    = address  ;
-    this.city       = city     ;
-    this.zip        = zip      ;
-    this.country    = country  ;
-  }
-
-  readonly carryOver  : string;
-  readonly firstName  : string;
-  readonly lastName   : string;
-  readonly address    : string;
-  readonly city       : string;
-  readonly zip        : string;
-  readonly country    : string;
+function mkCompany(cn: string, cno: string): Company {
+  return { companyName: cn, companyNo: cno };
 }
 
 type Entity = Person | Company;
 
-class NewUser {
-  constructor(entity: Entity, invoiceAddress: Address, deliveryAddress?: Address) {
-    this.entity = entity;
-    this.invoiceAddress = invoiceAddress;
-    this.deliveryAddress = deliveryAddress;
+type Address = {
+  carryOver  : string,
+  firstName  : string,
+  lastName   : string,
+  address    : string,
+  city       : string,
+  zip        : string,
+  country    : string,
+}
+function mkAddress(co: string, fn: string, ln: string, a: string, c: string, z: string, ct: string) : Address {
+  return {
+    carryOver  : co,
+    firstName  : fn,
+    lastName   : ln,
+    address    : a ,
+    city       : c ,
+    zip        : z ,
+    country    : ct,
   }
+}
 
-  readonly entity           : Entity;
-  readonly invoiceAddress   : Address;
-  readonly deliveryAddress? : Address;
+type NewUser = {
+  entity           : Entity,
+  invoiceAddress   : Address,
+  deliveryAddress? : Address,
+}
+function mkNewUser(e: Entity, ia: Address, da?: Address): NewUser {
+  return { entity: e, invoiceAddress: ia, deliveryAddress: da };
 }
 
 function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
   return Inputs
     .text(placeholder, "")
-    .then<string>(validator)  // TODO: Why is the type argument needed?
+    .then(validator)
     .then(Enhance.withValidation)
     .then(t => Enhance.withLabel(t, label))
     .surroundWith("div", { "className": "form-group" })
@@ -93,14 +75,14 @@ const person: Formlet<Entity> = Core
       text(Validate.notEmpty, "First name" , "Like 'John' or 'Jane'")
     , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
     , text(Validate.notEmpty, "Social no"  , "Like '010190-23902'")
-    , (fn, ln, sno) => new Person(fn, ln, sno)
+    , mkPerson
     ).then(t => Enhance.withLabeledBox(t, "Person"))
 
 const company: Formlet<Entity> = Core
   .map2(
       text(Validate.notEmpty, "Company name"  , "Like 'Amazon'")
     , text(Validate.notEmpty, "Company no"    , "Like 'MVA120934'")
-    , (cn, cno) => new Company(cn, cno)
+    , mkCompany
     ).then(t => Enhance.withLabeledBox(t, "Company"))
 
 const options = [{"key": "Person", "value": person}, {"key": "Company", "value": company}];
@@ -117,7 +99,7 @@ function address(label: string) {
       , text(Validate.notEmpty, "City"       , "Like 'New york'")
       , text(Validate.notEmpty, "Zip"        , "Like 'NY12345'")
       , text(Validate.ok      , "Country"    , "Like 'USA'")
-      , (co, fn, ln, a, city, zip, c) => new Address(co, fn, ln, a, city, zip, c)
+      , mkAddress
       ).then(t => Enhance.withLabeledBox(t, label))
       ;
 }
@@ -125,7 +107,11 @@ function address(label: string) {
 const invoiceAddress = address("Invoice address");
 const deliveryAddress = Core.unwrap(checkbox<Formlet<Address|undefined>>("Use delivery address?", Core.value(undefined), address("Delivery address")));
 
-const newUser = Core.map3(entity, invoiceAddress, deliveryAddress, (e, ia, da) => new NewUser(e, ia, da));
+const newUser = Core.map3(
+    entity
+  , invoiceAddress
+  , deliveryAddress
+  , mkNewUser);
 
 const formlet =
   newUser
