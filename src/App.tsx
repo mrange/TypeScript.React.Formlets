@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
-import { Core, Validate, Inputs, Enhance, FormletView, FormletViews, FormletComponent, Formlet, Unit } from './formlet';
+import { Core, Validate, Inputs, FormletComponent, Formlet, Unit } from './formlet';
+import { Enhance } from './bootstrap';
 import * as demo from './demo';
 
 type Person  = {
@@ -55,40 +56,47 @@ function mkNewUser(e: Entity, ia: Address, da?: Address): NewUser {
 function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
   return Inputs
     .text(placeholder, "")
+    .map(v => v.trim())
+    .then(Enhance.withFormControl)
     .then(validator)
-    .then(Enhance.withValidation)
-    .then(t => Enhance.withLabel(t, label))
-    .surroundWith("div", { "className": "form-group" })
+    .then(Enhance.withInputFeedback)
+    .then(t => Core.withLabel(t, label))
+    .surroundWith("div", {className: "form-group"})
     ;
 }
 
 function checkbox<T>(label: string, unchecked: T, checked: T) {
   return Inputs
     .checkbox(unchecked, checked)
-    .then(t => Enhance.withLabel(t, label, true))
-    .surroundWith("div", { "className": "form-group form-check" })
+    .then(Enhance.withFormCheckInput)
+    .then(t => Core.withLabel(t, label, true))
+    .surroundWith("div", {className: "form-group form-check"})
     ;
+}
+
+function validateSocialNo(t: Formlet<string>): Formlet<string> {
+  return Validate.regex(t, /\d{6}-\d{5}/, "Should look something like '010130-23902'")
 }
 
 const person: Formlet<Entity> = Core
   .map3(
       text(Validate.notEmpty, "First name" , "Like 'John' or 'Jane'")
     , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
-    , text(Validate.notEmpty, "Social no"  , "Like '010190-23902'")
+    , text(validateSocialNo , "Social no"  , "Like '010130-23902'")
     , mkPerson
-    ).then(t => Enhance.withLabeledBox(t, "Person"))
+    ).then(t => Enhance.withLabeledCard(t, "Person"))
 
 const company: Formlet<Entity> = Core
   .map2(
       text(Validate.notEmpty, "Company name"  , "Like 'Amazon'")
     , text(Validate.notEmpty, "Company no"    , "Like 'MVA120934'")
     , mkCompany
-    ).then(t => Enhance.withLabeledBox(t, "Company"))
+    ).then(t => Enhance.withLabeledCard(t, "Company"))
 
-const options = [{"key": "Person", "value": person}, {"key": "Company", "value": company}];
+const options = [{key: "Person", value: person}, {key: "Company", value: company}];
 
 const entity = Core
-  .unwrap(Inputs.select(options))
+  .unwrap(Inputs.select(options).then(Enhance.withFormControl))
   .mapView(v => v.withAttributes({style: {marginBottom: "8px"}}))
   ;
 
@@ -103,7 +111,7 @@ function address(label: string) {
       , text(Validate.notEmpty, "Zip"        , "Like 'NY12345'")
       , text(Validate.ok      , "Country"    , "Like 'USA'")
       , mkAddress
-      ).then(t => Enhance.withLabeledBox(t, label))
+      ).then(t => Enhance.withLabeledCard(t, label))
       ;
 }
 
@@ -118,7 +126,7 @@ const newUser = Core.map3(
 
 const formlet =
   newUser
-    .then(Enhance.withSubmit)
+    .then(Enhance.withSubmitHeader)
     .surroundWith("form", {})
     ;
 

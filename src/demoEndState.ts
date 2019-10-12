@@ -1,4 +1,11 @@
 /*eslint-disable */
+import { Core, Validate, Inputs, FormletViews, FormletComponent, Formlet } from './formlet';
+import { Enhance } from './bootstrap';
+
+export const formlet = Inputs
+  .text("Hello world!")
+  ;
+/*
 import { Core, Validate, Inputs, Enhance, FormletViews, FormletComponent, Formlet, SelectOption } from './formlet';
 
 function validateSocialNo(t: Formlet<string>) {
@@ -56,3 +63,4 @@ export const formlet =
   Core.unwrap(select)
   .then(Enhance.withSubmit)
   ;
+*/

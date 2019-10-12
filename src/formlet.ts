@@ -461,7 +461,7 @@ export class Formlet<T> extends BaseFormlet {
     this.build = build;
   }
 
-  // TODO: How to add these as extension methods
+  // TODO: How to add these as extension methods (prototype?)
 
   bind<U>(uf: (tv: T) => Formlet<U>): Formlet<U> {
     return Core.bind(this, uf);
@@ -675,6 +675,7 @@ export class Core {
     });
   }
 
+  // TODO: Remove surroundWith?
   static surroundWith<T>(t: Formlet<T>, element: any, attributes: object): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
       const tr = t.build(c, fc, fm);
@@ -682,7 +683,20 @@ export class Core {
     });
   }
 
-
+  static withLabel<T>(t: Formlet<T>, label: string, appendLabel?: boolean): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+        const id = c.createId();
+        const lfc = Lists.cons(label, fc);
+        const tr = t.build(c, lfc, fm);
+        const lv = FormletViews
+          .content(label)
+          .element("label", {htmlFor: id})
+          ;
+        const tv = tr.view.withId(id);
+        const v = appendLabel ? FormletViews.fork(tv, lv) : FormletViews.fork(lv, tv);
+        return tr.withView(v);
+      });
+  }
 
   static build<T>(context: FormletBuildContext, t: Formlet<T>, model: FormletModel): FormletResult<T> {
     return t.build(context, Lists.empty, model);
@@ -728,155 +742,6 @@ export class Validate {
   }
 }
 
-export class Enhance {
-  static withLabel<T>(t: Formlet<T>, label: string, appendLabel?: boolean): Formlet<T> {
-    return Core.formlet((c, fc, fm) => {
-        const id = c.createId();
-        const lfc = Lists.cons(label, fc);
-        const tr = t.build(c, lfc, fm);
-        const lv = FormletViews
-          .content(label)
-          .element("label", {htmlFor: id})
-          ;
-        const tv = tr.view.withId(id);
-        const v = appendLabel ? FormletViews.fork(tv, lv) : FormletViews.fork(lv, tv);
-        return tr.withView(v);
-      });
-  }
-
-  static withValidation<T>(t: Formlet<T>): Formlet<T> {
-    return Core.formlet((c, fc, fm) => {
-        const tr = t.build(c, fc, fm);
-        const f = tr.failure;
-        if (f.isEmpty) {
-          return tr.withView(tr.view.withAttributes({className: "is-valid"}));  // TODO: Break this dependency on bootstrap
-        } else  {
-          const fs: string[] = [];
-          f.aggregateFailures(fs);
-          const msg = fs.join("; ");
-          const vl = tr.view.withAttributes({className: "is-invalid"}); // TODO: Break this dependency on bootstrap
-          const vr = FormletViews
-            .content(msg)
-            .element("div", {className: "invalid-feedback"}) // TODO: Break this dependency on bootstrap
-            ;
-          return tr.withView(FormletViews.fork(vl, vr));
-        }
-      });
-  }
-
-  static withBox<T>(t: Formlet<T>): Formlet<T> {
-    return Core.formlet((c, fc, fm) => {
-        // TODO: Break the bootstrap dep
-        const tr = t.build(c, fc, fm);
-        const body = tr
-          .view
-          .element("div", {className: "card-body"})
-          ;
-        const v = body
-          .element("div", {className: "card mb-3"})
-          ;
-        return tr.withView(v);
-      });
-  }
-
-  static withLabeledBox<T>(t: Formlet<T>, label: string): Formlet<T> {
-    // TODO: Break the bootstrap dep
-    const header = FormletViews
-      .content(label)
-      .element("div", {className: "card-header"})
-      ;
-    return Core.formlet((c, fc, fm) => {
-      const lfc = Lists.cons(label, fc);
-      const tr = t.build(c, lfc, fm);
-        const body = tr
-          .view
-          .element("div", {className: "card-body"})
-          ;
-        const v = FormletViews.fork(header, body)
-          .element("div", {className: "card mb-3"})
-          ;
-        return tr.withView(v);
-      });
-  }
-
-  static withSubmit<T>(t: Formlet<T>): Formlet<T> {
-    function button(label: string, className: string, onClick?: (e: React.FormEvent<HTMLInputElement>) => void) {
-      const disabled = !onClick
-      const props = {
-        className: "btn " + className,
-        disabled: disabled,
-        onClick: onClick,
-        style: {marginRight: "8px"},
-        type: "button",
-        value: label,
-      };
-      return FormletViews
-        .element("input", props, FormletViews.empty)
-        ;
-    }
-
-    function header(label: string, submit: FormletView, reset: FormletView) {
-      const text = FormletViews.content(label);
-      return FormletViews
-        .group([submit, reset, text])
-        .element("div", {className: "card-header" })
-        ;
-    }
-
-    function td(content: string) {
-      return FormletViews.content(content).element("td", {});
-    }
-
-    const disabledSubmit = button("Submit", "btn-dark");
-    const goodBody = FormletViews
-      .content("No problems found.")
-      .element("div", {className: "card-body"})
-      ;
-
-    return Core.formlet((c, fc, fm) => {
-      const tr = t.build(c, fc, fm);
-
-      function onReset(e: React.FormEvent<HTMLInputElement>): void {
-        c.resetForm();
-      }
-
-      function onSubmit(e: React.FormEvent<HTMLInputElement>): void {
-        c.submitForm();
-      }
-
-      const reset = button("Reset", "btn-warning", onReset);
-
-      if (tr.failure.isEmpty) {
-        const submit = button("Submit", "btn-dark", onSubmit);
-        const goodHeader = header("Ready to submit", submit, reset);
-        const good = FormletViews
-          .fork(goodHeader, goodBody)
-          .element("div", {className: "card mb-3 text-white bg-success"})
-          ;
-        const v = FormletViews.fork(good, tr.view);
-
-        return tr.withView(v);
-      } else {
-        const fs: [string, string][] = [];
-        tr.failure.aggregateContextfulFailures(fs);
-        const badHeader = header("Fix the validation error(s)", disabledSubmit, reset);
-        const trs = fs.map(cm => FormletViews.group([td(cm[0]), td("->"), td(cm[1])]).element("tr", {}));
-        const table = FormletViews.group(trs).element("tbody", {}).element("table", {});
-        const badBody = table
-          .element("div", {className: "card-body"})
-          ;
-        const bad = FormletViews.fork(badHeader, badBody)
-          .element("div", {className: "card mb-3 text-white bg-danger"})
-          ;
-
-        const v = FormletViews.fork(bad, tr.view);
-        return tr.withView(v);
-      }
-    });
-  }
-
-}
-
 export type SelectOption<T> = {
   key: string;
   value: T;
@@ -892,9 +757,7 @@ export class Inputs {
           c.redrawForm();
         }
 
-        // TODO: Break the bootstrap dep "form-control"
         const props = {
-          className: "form-control",
           initial: model.value,
           onChange: onChange,
           placeholder: placeholder,
@@ -916,9 +779,7 @@ export class Inputs {
           c.redrawForm();
         }
 
-        // TODO: Break the bootstrap dep "form-check-input"
         const props = {
-          className: "form-check-input",
           onChange: onChange,
           checked: isChecked,
           type: "checkbox",
@@ -946,9 +807,7 @@ export class Inputs {
         const o = options.find(o => o.key == model.value);
         const v = o ? o.value : options[0].value;
 
-        // TODO: Break the bootstrap dep "form-control"
         const props = {
-          className: "form-control",
           onChange: onChange,
           value: model.value,
         };

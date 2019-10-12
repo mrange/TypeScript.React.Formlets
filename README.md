@@ -42,8 +42,6 @@ class NewUserComponent extends FormletComponent<NewUser> {
 
 1. Nail the API (style, naming)
 2. DelayedTextInputComponent bugs fixed
-3. Break dependency between Core and Bootstrap
-4. Add Bootstrap module (for easy integration Boostrap forms)
 5. Document formlet design
 6. Examples
 7. Handle side-effects (like server validation or server lookup)
@@ -52,6 +50,8 @@ class NewUserComponent extends FormletComponent<NewUser> {
 
 # DONE
 
+3. Break dependency between Core and Bootstrap
+4. Add Bootstrap module (for easy integration Boostrap forms)
 8. Merge style attributes
 
 
