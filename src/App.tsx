@@ -87,7 +87,10 @@ const company: Formlet<Entity> = Core
 
 const options = [{"key": "Person", "value": person}, {"key": "Company", "value": company}];
 
-const entity = Core.unwrap(Inputs.select(options)).mapView(v => v.withAttributes({"style": {"marginBottom": "8px"}}));
+const entity = Core
+  .unwrap(Inputs.select(options))
+  .mapView(v => v.withAttributes({style: {marginBottom: "8px"}}))
+  ;
 
 function address(label: string) {
   return Core

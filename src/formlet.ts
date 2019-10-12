@@ -106,7 +106,6 @@ class FormletFailure_Failure extends FormletFailure {
   }
 
   aggregateFailures(failures: string[]): void {
-    // TODO: Compute context
     failures.push(this.message);
   }
 
@@ -249,6 +248,11 @@ export abstract class FormletView {
     const rc = right.className;
     if (lc && rc) {
       a.className = lc + " " + rc;
+    }
+    const ls = left.style;
+    const rs = right.style;
+    if (ls && rs && (ls instanceof Object) && (rs instanceof Object)) {
+      a.style = Object.assign({}, ls, rs);
     }
     return a;
   }
@@ -988,16 +992,12 @@ export abstract class FormletComponent<T> extends React.Component<{}, FormletCom
   }
 
   redrawForm() {
-    console.log("redrawForm");
-
     const fr = Core.build(this.buildContext, this.formlet, this.state.model);
     this.setState(new FormletComponentState(fr.model, fr.failure, fr.view));
     this.forceUpdate();
   }
 
   resetForm() {
-    console.log("resetForm");
-
     const fr = Core.build(this.buildContext, this.formlet, FormletModels.empty);
     this.setState(new FormletComponentState(fr.model, fr.failure, fr.view));
     this.forceUpdate();

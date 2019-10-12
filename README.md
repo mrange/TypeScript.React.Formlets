@@ -47,6 +47,8 @@ class NewUserComponent extends FormletComponent<NewUser> {
 5. Document formlet design
 6. Examples
 7. Handle side-effects (like server validation or server lookup)
+8. Merge style attributes
+9. Add tests
 
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
