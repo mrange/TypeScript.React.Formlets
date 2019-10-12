@@ -8,7 +8,7 @@ const person = Core
       text("First name" , "Like 'John' or 'Jane'")
     , text("Last name"  , "Like 'Doe'")
     , mkPerson
-    ).then(t => Enhance.withLabeledBox(t, "Person"))
+    ).then(t => Enhance.withLabeledCard(t, "Person"))
     ;
 
 const address = Core
@@ -21,7 +21,7 @@ const address = Core
     , text("Zip"        , "Like 'NY12345'")
     , text("Country"    , "Like 'USA'")
     , mkAddress
-    ).then(t => Enhance.withLabeledBox(t, "Company"))
+    ).then(t => Enhance.withLabeledCard(t, "Company"))
     ;
 
 const newUser = Core.map2(person, address, mkNewUser);
