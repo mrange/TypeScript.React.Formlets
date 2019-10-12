@@ -21,7 +21,7 @@ function mkCompany(cn: string, cno: string): Company {
   return { companyName: cn, companyNo: cno };
 }
 
-type Entity = Person | Company;
+type LegalEntity = Person | Company;
 
 type Address = {
   carryOver  : string,
@@ -45,12 +45,12 @@ function mkAddress(co: string, fn: string, ln: string, a: string, c: string, z: 
 }
 
 type NewUser = {
-  entity           : Entity,
+  legalEntity      : LegalEntity,
   invoiceAddress   : Address,
   deliveryAddress? : Address,
 }
-function mkNewUser(e: Entity, ia: Address, da?: Address): NewUser {
-  return { entity: e, invoiceAddress: ia, deliveryAddress: da };
+function mkNewUser(le: LegalEntity, ia: Address, da?: Address): NewUser {
+  return { legalEntity: le, invoiceAddress: ia, deliveryAddress: da };
 }
 
 function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
@@ -78,7 +78,7 @@ function validateSocialNo(t: Formlet<string>): Formlet<string> {
   return Validate.regex(t, /^\d{6}-\d{5}$/, "Should look something like '010130-23902'")
 }
 
-const person: Formlet<Entity> = Core
+const person: Formlet<LegalEntity> = Core
   .map3(
       text(Validate.notEmpty, "First name" , "Like 'John' or 'Jane'")
     , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
@@ -86,7 +86,7 @@ const person: Formlet<Entity> = Core
     , mkPerson
     ).then(t => Enhance.withLabeledCard(t, "Person"))
 
-const company: Formlet<Entity> = Core
+const company: Formlet<LegalEntity> = Core
   .map2(
       text(Validate.notEmpty, "Company name"  , "Like 'Amazon'")
     , text(Validate.notEmpty, "Company no"    , "Like 'MVA120934'")
@@ -95,7 +95,7 @@ const company: Formlet<Entity> = Core
 
 const options = [{key: "Person", value: person}, {key: "Company", value: company}];
 
-const entity = Core
+const legalEntity = Core
   .unwrap(Inputs.select(options).then(Enhance.withFormControl))
   .mapView(v => v.withAttributes({style: {marginBottom: "8px"}}))
   ;
@@ -119,7 +119,7 @@ const invoiceAddress = address("Invoice address");
 const deliveryAddress = Core.unwrap(checkbox<Formlet<Address|undefined>>("Use delivery address?", Core.value(undefined), address("Delivery address")));
 
 const newUser = Core.map3(
-    entity
+    legalEntity
   , invoiceAddress
   , deliveryAddress
   , mkNewUser);
