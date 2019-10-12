@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css';
-import { Core, Validate, Inputs, FormletComponent, Formlet, Unit } from './formlet';
-import { Enhance } from './bootstrap';
+import { Core, Validate, Inputs, FormletComponent, Formlet, Unit } from './formlets/formlet';
+import { Enhance } from './formlets/bootstrap';
 import * as demo from './demo';
 
 type Person  = {
@@ -55,7 +55,7 @@ function mkNewUser(e: Entity, ia: Address, da?: Address): NewUser {
 
 function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
   return Inputs
-    .text(placeholder, "")
+    .text(placeholder)
     .map(v => v.trim())
     .then(Enhance.withFormControl)
     .then(validator)
@@ -75,7 +75,7 @@ function checkbox<T>(label: string, unchecked: T, checked: T) {
 }
 
 function validateSocialNo(t: Formlet<string>): Formlet<string> {
-  return Validate.regex(t, /\d{6}-\d{5}/, "Should look something like '010130-23902'")
+  return Validate.regex(t, /^\d{6}-\d{5}$/, "Should look something like '010130-23902'")
 }
 
 const person: Formlet<Entity> = Core

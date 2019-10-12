@@ -1,26 +1,6 @@
 /*eslint-disable */
-import { Core, Validate, Inputs, FormletViews, FormletComponent, Formlet } from './formlet';
-import { Enhance } from './bootstrap';
-
-export const formlet = Inputs
-  .text("Hello world!")
-  ;
-/*
-import { Core, Validate, Inputs, Enhance, FormletViews, FormletComponent, Formlet, SelectOption } from './formlet';
-
-function validateSocialNo(t: Formlet<string>) {
-  return Validate.regex(t, /\d{6}-\d{5}/, "Invalid social no, expected something like 100101-23989");
-}
-
-function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
-  return Inputs
-    .text(placeholder, "")
-    .then(validator)
-    .then(Enhance.withValidation)
-    .then(t => Enhance.withLabel(t, label))
-    .surroundWith("div", { "className": "form-group" })
-    ;
-}
+import { Core, Validate, Inputs, FormletViews, FormletComponent, Formlet } from './formlets/formlet';
+import { Enhance } from './formlets/bootstrap';
 
 type Person = {
   firstName: string;
@@ -39,28 +19,57 @@ function mkCompany(n: string, cno: string): Company {
   return {name: n, companyNo: cno};
 }
 
-type Entity = Person|Company;
+type LegalEntity = Person|Company;
 
-const person : Formlet<Entity> =
-  Core.map3(
-      text(Validate.notEmpty, "First Name", "Like 'John' or 'Jane'")
-    , text(Validate.notEmpty, "Last Name" , "Like 'Doe'")
-    , text(validateSocialNo , "Social no" , "Like '200101-32050'")
+function validateSocialNo(t: Formlet<string>): Formlet<string> {
+  return Validate.regex(t, /^\d{6}-\d{5}$/, "Should look something like '010130-23902'")
+}
+
+function text(validator: (t: Formlet<string>) => Formlet<string>, label: string, placeholder: string) {
+  return Inputs
+    .text(placeholder)
+    .map(v => v.trim())
+    .then(Enhance.withFormControl)
+    .then(validator)
+    .then(Enhance.withInputFeedback)
+    .then(t => Core.withLabel(t, label))
+    .surroundWith("div", {className: "form-group"})
+    ;
+}
+
+function checkbox<T>(label: string, unchecked: T, checked: T) {
+  return Inputs
+    .checkbox(unchecked, checked)
+    .then(Enhance.withFormCheckInput)
+    .then(t => Core.withLabel(t, label, true))
+    .surroundWith("div", {className: "form-group form-check"})
+    ;
+}
+
+const person: Formlet<LegalEntity> = Core
+  .map3(
+      text(Validate.notEmpty, "First name" , "Like 'John' or 'Jane'")
+    , text(Validate.notEmpty, "Last name"  , "Like 'Doe'")
+    , text(validateSocialNo , "Social no"  , "Like '010130-23902'")
     , mkPerson
-    ).then(t => Enhance.withLabeledBox(t, "Person"));
+    ).then(t => Enhance.withLabeledCard(t, "Person"))
 
-const company : Formlet<Entity> =
-  Core.map2(
-      text(Validate.notEmpty, "Company name", "Like 'Schibsted A/S'")
-    , text(Validate.notEmpty, "Company no"  , "Like 'MVA109034'")
+const company: Formlet<LegalEntity> = Core
+  .map2(
+      text(Validate.notEmpty, "Company name"  , "Like 'Amazon'")
+    , text(Validate.notEmpty, "Company no"    , "Like 'MVA120934'")
     , mkCompany
-    ).then(t => Enhance.withLabeledBox(t, "Company"));
+    ).then(t => Enhance.withLabeledCard(t, "Company"))
 
-const options : SelectOption<Formlet<Entity>>[] = [{"key": "Person", "value": person}, {"key": "Company", "value": company}];
-const select = Inputs.select(options).mapView(v => v.withAttributes({"style": {"marginBottom": "8px"}}));
+const options = [{key: "Person", value: person}, {key: "Company", value: company}];
 
-export const formlet =
-  Core.unwrap(select)
-  .then(Enhance.withSubmit)
+const legalEntity = Inputs
+  .select(options)
+  .then(Enhance.withFormControl)
+  .mapView(v => v.withAttributes({style: {marginBottom: "8px"}}))
   ;
-*/
+
+export const formlet = Core
+  .unwrap(legalEntity)
+  .then(Enhance.withSubmitHeader)
+  ;
