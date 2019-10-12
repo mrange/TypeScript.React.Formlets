@@ -1,5 +1,5 @@
 /*eslint-disable */
-import { Core, Validate, Inputs, FormletViews, FormletComponent, Formlet } from './formlets/formlet';
+import { Core, Validate, Inputs, Formlet } from './formlets/core';
 import { Enhance } from './formlets/bootstrap';
 
 export const formlet = Inputs

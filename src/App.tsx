@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { Core, Validate, Inputs, FormletComponent, Formlet, Unit } from './formlets/formlet';
+import { Core, Validate, Inputs, FormletComponent, Formlet, Unit } from './formlets/core';
 import { Enhance } from './formlets/bootstrap';
 import * as demo from './demo';
 

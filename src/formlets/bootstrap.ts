@@ -1,5 +1,5 @@
 /*eslint-disable */
-import { Core, Lists, FormletView, FormletViews, Formlet } from './formlet';
+import { Core, Lists, FormletView, FormletViews, Formlet } from './core';
 
 export class Enhance {
   static withFormControl<T>(t: Formlet<T>): Formlet<T> {

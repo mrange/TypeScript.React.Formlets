@@ -47,6 +47,7 @@ class NewUserComponent extends FormletComponent<NewUser> {
 7. Handle side-effects (like server validation or server lookup)
 9. Add tests
 10. Fix warning: Each child in a list should have a unique "key" prop.
+11. Remove React dependency from core (solve render)
 
 # DONE
 
