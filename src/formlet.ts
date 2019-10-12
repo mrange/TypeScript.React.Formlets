@@ -463,11 +463,11 @@ export class Formlet<T> extends BaseFormlet {
 
   // TODO: How to add these as extension methods
 
-  bind<U>(uf: (tv: T) => Formlet<U>) : Formlet<U> {
+  bind<U>(uf: (tv: T) => Formlet<U>): Formlet<U> {
     return Core.bind(this, uf);
   }
 
-  map<U>(m: (tv: T) => U) : Formlet<U> {
+  map<U>(m: (tv: T) => U): Formlet<U> {
     return Core.map(this, m);
   }
 
@@ -498,15 +498,15 @@ export class Core {
     return new Formlet<T>(build);
   }
 
-  static value<T>(value: T) : Formlet<T> {
+  static value<T>(value: T): Formlet<T> {
     return Core.formlet((c, fc, fm) => Core.result(value, FormletFailures.empty, FormletModels.empty, FormletViews.empty));
   }
 
-  static failure<T>(failureValue: T, message: string) : Formlet<T> {
+  static failure<T>(failureValue: T, message: string): Formlet<T> {
     return Core.formlet((c, fc, fm) => Core.result(failureValue, FormletFailures.failure(fc, message), FormletModels.empty, FormletViews.empty));
   }
 
-  static bind<T, U>(t: Formlet<T>, uf: (tv: T) => Formlet<U>) : Formlet<U> {
+  static bind<T, U>(t: Formlet<T>, uf: (tv: T) => Formlet<U>): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const [tfm, ufm] = fm.asFork();
       const tr = t.build(c, fc, tfm);
@@ -516,7 +516,7 @@ export class Core {
     });
   }
 
-  static apply<T, U>(f: Formlet<(v: T) => U>, t: Formlet<T>) : Formlet<U> {
+  static apply<T, U>(f: Formlet<(v: T) => U>, t: Formlet<T>): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const [ffm, tfm] = fm.asFork();
       const fr = f.build(c, fc, ffm);
@@ -525,7 +525,7 @@ export class Core {
     });
   }
 
-  static map1<T0, U>(t0: Formlet<T0>, m: ((tv0: T0) => U)) : Formlet<U> {
+  static map1<T0, U>(t0: Formlet<T0>, m: ((tv0: T0) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0.build(c, fc, fm);
       return tr.withValue(m(tr.value));
@@ -535,7 +535,7 @@ export class Core {
   static map2<T0, T1, U>(
       t0: Formlet<T0>
     , t1: Formlet<T1>
-    , m: ((tv0: T0, tv1: T1) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0
         .andAlso(t1)
@@ -550,7 +550,7 @@ export class Core {
       t0: Formlet<T0>
     , t1: Formlet<T1>
     , t2: Formlet<T2>
-    , m: ((tv0: T0, tv1: T1, tv2: T2) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1, tv2: T2) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0
         .andAlso(t1.andAlso(t2))
@@ -566,7 +566,7 @@ export class Core {
     , t1: Formlet<T1>
     , t2: Formlet<T2>
     , t3: Formlet<T3>
-    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0.andAlso(t1).andAlso(t2.andAlso(t3))
         .build(c, fc, fm)
@@ -582,7 +582,7 @@ export class Core {
     , t2: Formlet<T2>
     , t3: Formlet<T3>
     , t4: Formlet<T4>
-    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0.andAlso(t1).andAlso(t2.andAlso(t3.andAlso(t4)))
         .build(c, fc, fm)
@@ -599,7 +599,7 @@ export class Core {
     , t3: Formlet<T3>
     , t4: Formlet<T4>
     , t5: Formlet<T5>
-    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4, tv5: T5) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4, tv5: T5) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0.andAlso(t1).andAlso(t2.andAlso(t3).andAlso(t4.andAlso(t5)))
         .build(c, fc, fm)
@@ -617,7 +617,7 @@ export class Core {
     , t4: Formlet<T4>
     , t5: Formlet<T5>
     , t6: Formlet<T6>
-    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4, tv5: T5, tv6: T6) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4, tv5: T5, tv6: T6) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0.andAlso(t1.andAlso(t2)).andAlso(t3.andAlso(t4).andAlso(t5.andAlso(t6)))
         .build(c, fc, fm)
@@ -636,7 +636,7 @@ export class Core {
     , t5: Formlet<T5>
     , t6: Formlet<T6>
     , t7: Formlet<T7>
-    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4, tv5: T5, tv6: T6, tv7: T7) => U)) : Formlet<U> {
+    , m: ((tv0: T0, tv1: T1, tv2: T2, tv3: T3, tv4: T4, tv5: T5, tv6: T6, tv7: T7) => U)): Formlet<U> {
     return Core.formlet((c, fc, fm) => {
       const tr = t0.andAlso(t1).andAlso(t2.andAlso(t3)).andAlso(t4.andAlso(t5).andAlso(t6.andAlso(t7)))
         .build(c, fc, fm)
@@ -646,18 +646,18 @@ export class Core {
     });
   }
 
-  static map<T, U>(t: Formlet<T>, m: ((tv: T) => U)) : Formlet<U> {
+  static map<T, U>(t: Formlet<T>, m: ((tv: T) => U)): Formlet<U> {
       return Core.map1(t, m);
     }
 
-  static mapView<T>(t: Formlet<T>, m: (tv: FormletView) => FormletView) : Formlet<T> {
+  static mapView<T>(t: Formlet<T>, m: (tv: FormletView) => FormletView): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
       const tr = t.build(c, fc, fm);
       return tr.withView(m(tr.view));
     });
   }
 
-  static andAlso<T, U>(t: Formlet<T>, u: Formlet<U>) : Formlet<[T, U]> {
+  static andAlso<T, U>(t: Formlet<T>, u: Formlet<U>): Formlet<[T, U]> {
     return Core.formlet((c, fc, fm) => {
       const [tfm, ufm] = fm.asFork();
       const tr = t.build(c, fc, tfm);
@@ -666,7 +666,7 @@ export class Core {
     });
   }
 
-  static unwrap<T>(t: Formlet<Formlet<T>>) : Formlet<T> {
+  static unwrap<T>(t: Formlet<Formlet<T>>): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
       const [tfm, ifm] = fm.asFork();
       const tr = t.build(c, fc, tfm);
@@ -675,7 +675,7 @@ export class Core {
     });
   }
 
-  static surroundWith<T>(t: Formlet<T>, element: any, attributes: object) : Formlet<T> {
+  static surroundWith<T>(t: Formlet<T>, element: any, attributes: object): Formlet<T> {
     return Core.formlet((c, fc, fm) => {
       const tr = t.build(c, fc, fm);
       return tr.withView(tr.view.element(element, attributes));
@@ -690,7 +690,7 @@ export class Core {
 
   static render(v: FormletView): any {
     const ctx = new FormletRenderContext();
-    const i : any[] = [];
+    const i: any[] = [];
     v.render(ctx, i, {}, undefined)
     if (i.length == 0) {
       return React.createElement("div", {}, null);
@@ -736,7 +736,7 @@ export class Enhance {
         const tr = t.build(c, lfc, fm);
         const lv = FormletViews
           .content(label)
-          .element("label", {"htmlFor": id})
+          .element("label", {htmlFor: id})
           ;
         const tv = tr.view.withId(id);
         const v = appendLabel ? FormletViews.fork(tv, lv) : FormletViews.fork(lv, tv);
@@ -749,15 +749,15 @@ export class Enhance {
         const tr = t.build(c, fc, fm);
         const f = tr.failure;
         if (f.isEmpty) {
-          return tr.withView(tr.view.withAttributes({"className": "is-valid"}));  // TODO: Break this dependency on bootstrap
+          return tr.withView(tr.view.withAttributes({className: "is-valid"}));  // TODO: Break this dependency on bootstrap
         } else  {
-          const fs : string[] = [];
+          const fs: string[] = [];
           f.aggregateFailures(fs);
           const msg = fs.join("; ");
-          const vl = tr.view.withAttributes({"className": "is-invalid"}); // TODO: Break this dependency on bootstrap
+          const vl = tr.view.withAttributes({className: "is-invalid"}); // TODO: Break this dependency on bootstrap
           const vr = FormletViews
             .content(msg)
-            .element("div", { "className": "invalid-feedback"}) // TODO: Break this dependency on bootstrap
+            .element("div", {className: "invalid-feedback"}) // TODO: Break this dependency on bootstrap
             ;
           return tr.withView(FormletViews.fork(vl, vr));
         }
@@ -770,10 +770,10 @@ export class Enhance {
         const tr = t.build(c, fc, fm);
         const body = tr
           .view
-          .element("div", { "className" : "card-body"})
+          .element("div", {className: "card-body"})
           ;
         const v = body
-          .element("div", { "className" : "card mb-3"})
+          .element("div", {className: "card mb-3"})
           ;
         return tr.withView(v);
       });
@@ -783,17 +783,17 @@ export class Enhance {
     // TODO: Break the bootstrap dep
     const header = FormletViews
       .content(label)
-      .element("div", { "className" : "card-header"})
+      .element("div", {className: "card-header"})
       ;
     return Core.formlet((c, fc, fm) => {
       const lfc = Lists.cons(label, fc);
       const tr = t.build(c, lfc, fm);
         const body = tr
           .view
-          .element("div", { "className" : "card-body"})
+          .element("div", {className: "card-body"})
           ;
         const v = FormletViews.fork(header, body)
-          .element("div", { "className" : "card mb-3"})
+          .element("div", {className: "card mb-3"})
           ;
         return tr.withView(v);
       });
@@ -803,12 +803,12 @@ export class Enhance {
     function button(label: string, className: string, onClick?: (e: React.FormEvent<HTMLInputElement>) => void) {
       const disabled = !onClick
       const props = {
-        "className": "btn " + className,
-        "disabled": disabled,
-        "onClick": onClick,
-        "style": {"marginRight": "8px"},
-        "type": "button",
-        "value": label,
+        className: "btn " + className,
+        disabled: disabled,
+        onClick: onClick,
+        style: {marginRight: "8px"},
+        type: "button",
+        value: label,
       };
       return FormletViews
         .element("input", props, FormletViews.empty)
@@ -819,7 +819,7 @@ export class Enhance {
       const text = FormletViews.content(label);
       return FormletViews
         .group([submit, reset, text])
-        .element("div", { "className" : "card-header"})
+        .element("div", {className: "card-header" })
         ;
     }
 
@@ -830,7 +830,7 @@ export class Enhance {
     const disabledSubmit = button("Submit", "btn-dark");
     const goodBody = FormletViews
       .content("No problems found.")
-      .element("div", { "className" : "card-body"})
+      .element("div", {className: "card-body"})
       ;
 
     return Core.formlet((c, fc, fm) => {
@@ -851,7 +851,7 @@ export class Enhance {
         const goodHeader = header("Ready to submit", submit, reset);
         const good = FormletViews
           .fork(goodHeader, goodBody)
-          .element("div", { "className" : "card mb-3 text-white bg-success"})
+          .element("div", {className: "card mb-3 text-white bg-success"})
           ;
         const v = FormletViews.fork(good, tr.view);
 
@@ -863,10 +863,10 @@ export class Enhance {
         const trs = fs.map(cm => FormletViews.group([td(cm[0]), td("->"), td(cm[1])]).element("tr", {}));
         const table = FormletViews.group(trs).element("tbody", {}).element("table", {});
         const badBody = table
-          .element("div", { "className" : "card-body"})
+          .element("div", {className: "card-body"})
           ;
         const bad = FormletViews.fork(badHeader, badBody)
-          .element("div", { "className" : "card mb-3 text-white bg-danger"})
+          .element("div", {className: "card mb-3 text-white bg-danger"})
           ;
 
         const v = FormletViews.fork(bad, tr.view);
@@ -894,10 +894,10 @@ export class Inputs {
 
         // TODO: Break the bootstrap dep "form-control"
         const props = {
-          "className": "form-control",
-          "initial": model.value,
-          "onChange": onChange,
-          "placeholder": placeholder,
+          className: "form-control",
+          initial: model.value,
+          onChange: onChange,
+          placeholder: placeholder,
         };
         const view = FormletViews
           .element(DelayedTextInputComponent, props, FormletViews.empty)
@@ -918,10 +918,10 @@ export class Inputs {
 
         // TODO: Break the bootstrap dep "form-check-input"
         const props = {
-          "className": "form-check-input",
-          "onChange": onChange,
-          "checked": isChecked,
-          "type": "checkbox",
+          className: "form-check-input",
+          onChange: onChange,
+          checked: isChecked,
+          type: "checkbox",
         };
         const view = FormletViews
           .element("input", props, FormletViews.empty)
@@ -934,7 +934,7 @@ export class Inputs {
     if (options.length == 0) {
       throw new Error("select - expected at least one option");
     }
-    const content = FormletViews.group(options.map(o => FormletViews.content(o.key).element("option", { "value": o.key})));
+    const content = FormletViews.group(options.map(o => FormletViews.content(o.key).element("option", {value: o.key})));
     return Core.formlet((c, fc, fm) => {
         const model = fm.asValue(options[0].key);
         const failure = FormletFailures.empty;
@@ -948,9 +948,9 @@ export class Inputs {
 
         // TODO: Break the bootstrap dep "form-control"
         const props = {
-          "className": "form-control",
-          "onChange": onChange,
-          "value": model.value,
+          className: "form-control",
+          onChange: onChange,
+          value: model.value,
         };
         const view = FormletViews
           .element("select", props, content)
@@ -1030,7 +1030,7 @@ export type DelayedTextInputProps = {
 }
 
 export type DelayedTextInputState = {
-  value : string;
+  value: string;
 }
 
 export class DelayedTextInputComponent extends React.Component<DelayedTextInputProps, DelayedTextInputState> {
@@ -1057,12 +1057,12 @@ export class DelayedTextInputComponent extends React.Component<DelayedTextInputP
     return React.createElement(
       "input",
       {
-        "type": "text",
-        "value": this.state.value,
-        "placeholder": this.props.placeholder,
-        "className" : this.props.className,
-        "onChange" : this.onChange,
-        "onBlur" : this.onBlur,
+        type: "text",
+        value: this.state.value,
+        placeholder: this.props.placeholder,
+        className: this.props.className,
+        onChange: this.onChange,
+        onBlur: this.onBlur,
       });
   }
 }
