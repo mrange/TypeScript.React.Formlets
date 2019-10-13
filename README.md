@@ -42,12 +42,15 @@ class NewUserComponent extends FormletComponent<NewUser> {
 
 1. Nail the API (style, naming)
 2. DelayedTextInputComponent bugs fixed
-5. Document formlet design
 6. Examples
 7. Handle side-effects (like server validation or server lookup)
 9. Add tests
 10. Fix warning: Each child in a list should have a unique "key" prop.
 11. Remove React dependency from core (solve render)
+
+# INPROGRESS
+
+5. Document formlet design
 
 # DONE
 
