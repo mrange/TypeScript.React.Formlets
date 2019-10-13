@@ -863,13 +863,13 @@ export abstract class FormletComponent<T> extends React.Component<{}, FormletCom
   }
 
   submitForm() {
-    console.log("submitForm");
-
     const fr = Core.build(this.buildContext, this.formlet, this.state.model);
     if (fr.failure.isEmpty) {
       this.onSubmit(fr.value);
     } else {
-      console.log("Can't submit form because value didn't validate");
+      if (console && console.error) {
+        console.error("Can't submit form because value didn't validate");
+      }
     }
   }
 
