@@ -188,6 +188,8 @@ A `FormletResult<T>` there is a tuple of:
 
 One way this Formlet design differs from many others is that a value is always produced but sometimes the value might be invalid. There are drawbacks to this approach but one of the benefits is that monadic bind is useful.
 
+### Basic formlets
+
 Let's see how basic formlet functions are defined:
 
 ```typescript
@@ -236,5 +238,82 @@ const [tfm, ufm] = fm.asFork();
 
 If the model is a fork then the current state will be preserved, otherwise it will be discarded and a new empty state is created. This is because the formlet can change shape, like we were collection information about a person but the user changed their mind and now we are supposed to collect information about a company instead. The model for the person and the company doesn't match so person model is discarded (at least partially).
 
-## TBW
+### Input formlets
 
+Let's see the checkbox formlet:
+
+```typescript
+export class Inputs {
+  static checkbox<T>(unchecked: T, checked: T, initial: boolean = false): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+        const model = fm.asValue(initial ? "on" : "off");
+        const isChecked = model.value == "on";
+        const failure = FormletFailures.empty;
+        function onChange(e: React.FormEvent<HTMLInputElement>) {
+          model.value = isChecked ? "off" : "on";
+          c.redrawForm();
+        }
+
+        const props = {
+          onChange: onChange,
+          checked: isChecked,
+          type: "checkbox",
+        };
+        const view = FormletViews
+          .element("input", props, FormletViews.empty)
+          ;
+        return Core.result(model.value == "on" ? checked : unchecked, failure, model, view)
+      });
+  }
+}
+```
+
+The first the checkbox does is to check if the model is a `Value`, if it is then we re use it, otherwise a `Value` is created and the current model discarded.
+
+In order to be able to react on changes we create an `onChange` handler. If the user click the checkbox we invert it's state and ask for a redraw. Note that the value is mutable, we could make it immutable but then in order to update the state we would need to use lenses to update the deeply nested model state. However, the shape the model is immutable.
+
+Finally an `input` element is created with some props and no nested view.
+
+### Validation formlets
+
+Validation is an intrinsic feature of formlets.
+
+```typescript
+export class Validate {
+  static validate<T> (t: Formlet<T>, validator: (v: T) => string|undefined): Formlet<T> {
+    return Core.formlet((c, fc, fm) => {
+      const tr = t.build(c, fc, fm);
+      const v = validator(tr.value);
+      if (v) {
+        return tr.withFailure(tr.failure.join(FormletFailures.failure(fc, v)));
+      } else {
+        return tr;
+      }
+    });
+  }
+}
+```
+
+The core `validate` function allows a develop to check if the value produced by the formlet is valid, if it is then the developer returns `undefined` otherwise return the error message.
+
+`validate` first runs the nested formlet, then runs the validator function on the value. If no failure is detected we return `tr` otherwise we need to extend the failure tree with the error message.
+
+```typescript
+return tr.withFailure(tr.failure.join(FormletFailures.failure(fc, v)));
+```
+
+Using `validate` other useful validators can be created:
+
+```typescript
+export class Validate {
+  static notEmpty(t: Formlet<string>): Formlet<string> {
+    return Validate.validate(t, v => v.length == 0 ? "Must not be empty" : undefined);
+  }
+
+  static regex(t: Formlet<string>, r: RegExp, msg: string): Formlet<string> {
+    return Validate.validate(t, v => !r.test(v) ? msg : undefined);
+  }
+}
+```
+
+# TBW
