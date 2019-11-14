@@ -3,6 +3,10 @@
 Formlets is a cool idea and I want to explore how formlets can look in Typescript/React.
 
 ```typescript
+function text(label: string, placeholder: string) {
+  return Inputs.text(placeholder).then(t => Core.withLabel(t, label));
+}
+
 const person = Core
   .map2(
       text("First name" , "Like 'John' or 'Jane'")
